@@ -1,0 +1,9 @@
+ADDRESS................................ SYMFIL SYMBOL.............. DES 1............... DES 2............... DES 3............... DES 4............... DES 5............... DEV.. ABV...... BLW......
+B3/0                                    0                           SEAMER ID            121LGA267                                                                         0                        
+B3/1                                    0                           SEAMER RUN           LIMITS                                                                            0                        
+I:020/13                                0                           INFEED               WISKER               SWITCH                                                         0                        
+I:020/11                                0                           CAN FEED             CHAIN LS                                                                          0                        
+I:020/12                                0                           DISCHARGE            HOLD DOWN            BAR LS                                                         0                        
+O:002/11                                0                           SEAMER               BRAKE                RELAY                                                          0                        
+T4:56                                   0                           INFEED               WHISKER              DELAY TIMER                                                    0                        
+B40/4                                   0                           CRT JAM              STOP                 BYPASS SELCT                                                   0                        

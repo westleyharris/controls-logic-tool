@@ -1,0 +1,87 @@
+(*********************************************
+
+  Import-Export
+  Version   := RSLogix 5000 v28.03
+  Owner     := test,
+  Exported  := Tue Nov 17 00:00:00 2026
+
+**********************************************)
+IE_VER := 2.19;
+
+CONTROLLER MINI_LABELER (Description := "Test Labeler",
+                            ProcessorType := "1756-L72S",
+                            Major := 28,
+                            SerialNumber := 16#00f3_908c,
+                            ReportMinorOverflow := 0)
+	MODULE Local (Parent := "Local",
+	              ParentModule := "",
+	              CatalogNumber := "1756-L72S",
+	              Vendor := 1,
+	              ProductType := 14,
+	              ProductCode := 158,
+	              Major := 28,
+	              Minor := 3,
+	              PortLabel := "RxBackplane",
+	              ChassisSize := 7,
+	              Slot := 0,
+	              Mode := 2#0000_0000_0000_0001,
+	              CompatibleModule := 0,
+	              KeyMask := 2#0000_0000_0001_1111)
+	MODULE E0501_COM232 (Parent := "Local",
+	                     ParentModule := "Local",
+	                     CatalogNumber := "1756-EN2T",
+	                     Description := "Data Line Network",
+	                     Vendor := 1,
+	                     ProductType := 12,
+	                     ProductCode := 166,
+	                     Major := 11,
+	                     Minor := 1,
+	                     PortLabel := "RxBackplane",
+	                     Slot := 1,
+	                     Mode := 2#0000_0000_0000_0001,
+	                     CompatibleModule := 0,
+	                     KeyMask := 2#0000_0000_0001_1111)
+	MODULE E0505_COM011_Node30 (Parent := "E0501_COM232",
+	                            ParentModule := "E0501_COM232",
+	                            CatalogNumber := "1734-AENTR/B",
+	                            Description := "Point-IO Basic Inputs",
+	                            Vendor := 1,
+	                            ProductType := 12,
+	                            ProductCode := 193,
+	                            Major := 6,
+	                            Minor := 1,
+	                            PortLabel := "RxEthernet",
+	                            Slot := 0,
+	                            Mode := 2#0000_0000_0000_0001,
+	                            CompatibleModule := 0,
+	                            KeyMask := 2#0000_0000_0001_1111)
+	TAG
+		Config : Config := [0];
+	END_TAG
+
+	PROGRAM Machine (Description := "General Machine Functions",
+	                 Class := Standard,
+	                 MainRoutineName := "MainRoutine",
+	                 MainProgramFaultRoutineName := "",
+	                 Force := No,
+	                 Inhibit := No)
+		TAG
+		END_TAG
+		ROUTINE MainRoutine (Description := "Main",
+		                     Type := RLL)
+			RUNG 0 (N := "XIC(Start_PB)OTE(Motor_Run);",
+			        F := No,
+			        Comment := "Start seal");
+			RUNG 1 (N := "[XIC(Start_PB),XIC(Motor_Run)]XIC(Stop_OK)OTE(Motor_Run);");
+		END_ROUTINE
+	END_PROGRAM
+
+	TASK MainTask (Description := "Continuous Main Task",
+	               Type := CONTINUOUS,
+	               Watchdog := 500,
+	               Priority := 10,
+	               Rate := 0,
+	               Inhibit := No)
+		PROGRAM Machine;
+	END_TASK
+END_CONTROLLER

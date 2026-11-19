@@ -1,0 +1,24 @@
+{
+  "name": "controls-logic-tool",
+  "version": "1.0.0",
+  "description": "Explore and troubleshoot Allen-Bradley PLC exports (PC5, L5K, …) in the browser",
+  "scripts": {
+    "web": "npm run dev --prefix web",
+    "web:build": "npm run build --prefix web",
+    "import": "tsx src/cli/import.ts",
+    "typecheck": "tsc --noEmit && npm exec --prefix web -- tsc -b web"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "zod": "^4.6.7"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

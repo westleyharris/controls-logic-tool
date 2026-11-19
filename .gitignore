@@ -1,0 +1,13 @@
+node_modules/
+dist/
+out/
+.DS_Store
+*.log
+.env
+.env.*
+.vercel
+.claude/
+
+# Customer PLC exports and drawings never go into git — only the hand-made fixtures do.
+samples/*
+!samples/fixtures/
