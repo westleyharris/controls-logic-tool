@@ -4,6 +4,7 @@ import type { ProjectIndex } from "@core/query/index";
 import { formatValue } from "@core/query/index";
 import type { AlarmEntry, CallNode, IoGroup, ScanStructure } from "@core/logic/overview";
 import type { Location, Selection } from "../lib/nav";
+import { Icon } from "./Icon";
 
 type Nav = { onNavigate: (loc: Location) => void; onSelect: (sel: Selection) => void };
 
@@ -23,7 +24,7 @@ function CallTree({ node, depth, onNavigate }: { node: CallNode; depth: number; 
       <div className="call-row-line" style={{ paddingLeft: depth * 16 }}>
         {kids ? (
           <button type="button" className={`twisty ${open ? "open" : ""}`} onClick={() => setOpen((x) => !x)} aria-label={open ? "Collapse" : "Expand"}>
-            ▸
+            <Icon name="chevron-right" size={14} />
           </button>
         ) : (
           <span className="twisty-spacer" />

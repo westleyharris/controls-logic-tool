@@ -15,6 +15,7 @@ import { AskAi } from "./AskAi";
 import type { Attachment } from "../lib/machines";
 import { addressVariants, searchPages } from "../lib/pdf";
 import { OutputTree } from "./OutputTree";
+import { Icon } from "./Icon";
 
 export function Inspector({
   index,
@@ -36,7 +37,7 @@ export function Inspector({
       <div className="pane-head">
         <span className="pane-title">{selection?.kind === "rung" ? "Explain" : "Inspector"}</span>
         <button type="button" className="icon-btn" onClick={onClose} aria-label="Hide inspector" title="Hide inspector">
-          ×
+          <Icon name="x" />
         </button>
       </div>
       <div className="pane-scroll">
@@ -307,9 +308,7 @@ function BlockerList({
           return (
             <li key={i}>
               <button type="button" className="blocker" disabled={!d.ref} onClick={() => d.ref && onPick(d.ref)}>
-                <span className="x" aria-hidden>
-                  ✕
-                </span>
+                <Icon name="x" size={13} className="x" />
                 {d.text}
               </button>
             </li>

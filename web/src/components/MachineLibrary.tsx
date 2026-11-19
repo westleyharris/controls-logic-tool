@@ -11,6 +11,7 @@ import {
   type MachineSummary,
 } from "../lib/machines";
 import { FilePicker } from "./FilePicker";
+import { Icon } from "./Icon";
 
 function when(ts: number | undefined): string {
   if (!ts) return "never";
@@ -163,8 +164,8 @@ export function MachineLibrary({
             {m.processor ? <span className="mono small">{m.processor}</span> : null}
             {m.location ? <span>{m.location}</span> : null}
             {m.remote ? (
-              <span className="chip small cloud-chip" title="In your cloud library — downloads the first time you open it">
-                ☁ in the cloud
+              <span className="chip small cloud-chip" title="In your cloud library — downloading to this device">
+                <Icon name="download" size={12} /> downloading
               </span>
             ) : m.dirty || m.filesDirty ? (
               cloudEmail ? (
@@ -247,7 +248,7 @@ export function MachineLibrary({
               <section key={cKey} className={`org-company ${c.key ? "" : "unassigned"}`}>
                 <div className="org-head company">
                   <button type="button" className={`twisty ${cOpen ? "open" : ""}`} onClick={() => toggle(cKey)} aria-label={cOpen ? "Collapse" : "Expand"}>
-                    ▸
+                    <Icon name="chevron-right" size={14} />
                   </button>
                   {renaming === cKey ? (
                     <GroupRename
@@ -292,7 +293,7 @@ export function MachineLibrary({
                               onClick={() => toggle(lKey)}
                               aria-label={lOpen ? "Collapse" : "Expand"}
                             >
-                              ▸
+                              <Icon name="chevron-right" size={14} />
                             </button>
                             {renaming === lKey ? (
                               <GroupRename

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { sendPasswordReset, signIn, signOut, signUp, useCloud } from "../lib/cloud";
 import { syncNow } from "../lib/sync";
+import { Icon } from "./Icon";
 
 function ago(ts?: number): string {
   if (!ts) return "not yet";
@@ -22,7 +23,7 @@ export function CloudButton({ onClick }: { onClick: () => void }) {
         : `Synced ${ago(c.lastSync)} · ${c.user.email}`;
   return (
     <button type="button" className={`icon-btn cloud-btn ${c.user ? "on" : ""} ${c.syncing ? "busy" : ""} ${c.error ? "err" : ""}`} onClick={onClick} title={title} aria-label={title}>
-      ☁
+      <Icon name="cloud" size={19} />
       {c.user ? <span className="cloud-dot" aria-hidden /> : null}
     </button>
   );

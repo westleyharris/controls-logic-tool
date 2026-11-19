@@ -26,8 +26,9 @@ import { analyzeProject } from "./lib/analysis";
 import { saveEndpointLink } from "./lib/network";
 import { useLibraryInsights } from "./lib/useInsights";
 import { AccountDialog, CloudButton } from "./components/AccountDialog";
+import { Icon } from "./components/Icon";
 import { startAuth, useCloud } from "./lib/cloud";
-import { ensureMachineFiles, onSyncChange, requestSync, syncAttachments, syncNow } from "./lib/sync";
+import { ensureMachineFiles, onDrawingsChange, onSyncChange, requestSync, syncAttachments, syncNow } from "./lib/sync";
 import { extractPdfText } from "./lib/pdf";
 import { importInWorker, readExportFile } from "./lib/importer";
 import {
@@ -189,6 +190,11 @@ export default function App() {
   // New view starts at the top (a routine opened at a rung scrolls itself to that rung).
   const locationKey = toHash(location.view === "routine" ? { view: "routine", ref: location.ref } : location);
   useEffect(() => {
+    // On a phone the drawer and the inspector sheet cover the page: close them when you go somewhere.
+    if (window.matchMedia("(max-width: 760px)").matches) {
+      setOrganizerOpen(false);
+      setInspectorOpen(false);
+    }
     if (location.view === "routine" && location.rung !== undefined) return;
     centerRef.current?.scrollTo({ top: 0 });
   }, [locationKey]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -196,6 +202,8 @@ export default function App() {
   /* ---------------------------------- machines --------------------------------- */
 
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const currentIdRef = useRef<string | null>(null);
+  currentIdRef.current = current?.id ?? null;
 
   const show = useCallback(
     (machine: MachineSummary, model: ProjectModel, loc?: Location, sel?: Selection) => {
@@ -379,6 +387,9 @@ export default function App() {
   // Cloud: restore the session, sync when signed in, when back online and when the app comes back to the front.
   useEffect(() => {
     onSyncChange(() => void refreshMachines());
+    onDrawingsChange((machineId) => {
+      if (currentIdRef.current === machineId) void listAttachments(machineId).then(setAttachments);
+    });
     void startAuth(() => void syncNow());
     const wake = () => {
       if (document.visibilityState === "visible") requestSync(500);
@@ -502,10 +513,10 @@ export default function App() {
             aria-label="Toggle organizer"
             title="Toggle organizer"
           >
-            ☰
+            <Icon name="menu" size={20} />
           </button>
         ) : null}
-        <button type="button" className="brand" onClick={() => goLibrary()} title="All machines">
+        <button type="button" className={`brand${project ? " in-machine" : ""}`} onClick={() => goLibrary()} title="All machines">
           <span className="brand-mark" aria-hidden />
           <span className="brand-name">Controls Logic Tool</span>
         </button>
@@ -513,7 +524,7 @@ export default function App() {
           <>
             <div className="nav-arrows">
               <button type="button" className="icon-btn" onClick={() => window.history.back()} aria-label="Back" title="Back">
-                ‹
+                <Icon name="chevron-left" />
               </button>
               <button
                 type="button"
@@ -522,7 +533,7 @@ export default function App() {
                 aria-label="Forward"
                 title="Forward"
               >
-                ›
+                <Icon name="chevron-right" />
               </button>
             </div>
             <MachineSwitcher
@@ -537,30 +548,29 @@ export default function App() {
         <div className="topbar-spacer" />
         {project ? (
           <button type="button" className="btn ask-btn" onClick={() => navigate({ view: "assistant" })} title="Describe a problem and let the AI find it" aria-label="Ask AI">
-            ✦<span className="ask-text"> Ask AI</span>
+            <Icon name="sparkles" size={16} />
+            <span className="ask-text">Ask AI</span>
           </button>
         ) : null}
         {project ? (
           <button type="button" className="search-trigger" onClick={() => setSearchOpen(true)} aria-label="Search">
-            <span className="search-ico" aria-hidden>
-              ⌕
-            </span>
+            <Icon name="search" size={16} className="search-ico" />
             <span className="search-text">Search tags, addresses, comments…</span>
             <kbd>⌘K</kbd>
           </button>
         ) : null}
         <CloudButton onClick={() => setAccountOpen(true)} />
-        <button type="button" className="icon-btn" onClick={() => setSettingsOpen(true)} aria-label="Settings" title="Settings (Ask AI key)">
-          ⚙
+        <button type="button" className="icon-btn" onClick={() => setSettingsOpen(true)} aria-label="Settings" title="Settings (Ask AI key, theme)">
+          <Icon name="settings" />
         </button>
         <button
           type="button"
-          className="icon-btn"
+          className="icon-btn theme-btn"
           onClick={toggleTheme}
           aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
           title={theme === "dark" ? "Light theme" : "Dark theme"}
         >
-          {theme === "dark" ? "☀" : "☾"}
+          <Icon name={theme === "dark" ? "sun" : "moon"} />
         </button>
       </header>
 
@@ -786,7 +796,7 @@ export default function App() {
           onCancel={() => setPendingAdd(null)}
         />
       ) : null}
-      {settingsOpen ? <SettingsDialog onClose={() => setSettingsOpen(false)} /> : null}
+      {settingsOpen ? <SettingsDialog theme={theme} onToggleTheme={toggleTheme} onClose={() => setSettingsOpen(false)} /> : null}
       {accountOpen ? (
         <AccountDialog
           onClose={() => setAccountOpen(false)}

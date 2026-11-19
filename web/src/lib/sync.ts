@@ -404,10 +404,53 @@ async function syncNotes(): Promise<void> {
 let running: Promise<boolean> | null = null;
 let again = false;
 let onChange: (() => void) | undefined;
+let onDrawings: ((machineId: string) => void) | undefined;
 
 /** Called when sync changed the local library (so the UI reloads it). */
 export function onSyncChange(fn: () => void): void {
   onChange = fn;
+}
+
+/** Called when a machine's drawings changed in the background. */
+export function onDrawingsChange(fn: (machineId: string) => void): void {
+  onDrawings = fn;
+}
+
+let prefetching = false;
+
+/**
+ * Like any web app: once signed in, every machine (its export and drawings)
+ * comes down to this device in the background, so it's all there — offline too.
+ */
+async function prefetchAll(): Promise<void> {
+  if (prefetching || !getCloudState().user || !navigator.onLine) return;
+  prefetching = true;
+  try {
+    const todo = (await listMachinesFull()).filter((m) => m.remote || !m.files.length);
+    for (let i = 0; i < todo.length; i++) {
+      if (!getCloudState().user) return;
+      setCloudState({ syncing: true, progress: `Downloading machines — ${i + 1} of ${todo.length}` });
+      try {
+        await downloadMachineFiles(todo[i]!);
+        onChange?.();
+      } catch {
+        // try again on the next sync
+      }
+    }
+    const all = await listMachinesFull();
+    for (let i = 0; i < all.length; i++) {
+      if (!getCloudState().user) return;
+      setCloudState({ syncing: true, progress: `Checking drawings — ${i + 1} of ${all.length}` });
+      try {
+        if (await syncAttachments(all[i]!.id, true)) onDrawings?.(all[i]!.id);
+      } catch {
+        // next time
+      }
+    }
+  } finally {
+    prefetching = false;
+    setCloudState({ syncing: false, progress: undefined });
+  }
 }
 
 /** Full sync now. Concurrent calls share one run (and queue one more). */
@@ -440,6 +483,8 @@ export function syncNow(): Promise<boolean> {
     if (again) {
       again = false;
       void syncNow();
+    } else {
+      void prefetchAll();
     }
     return changed;
   })();

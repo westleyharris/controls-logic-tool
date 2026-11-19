@@ -8,6 +8,7 @@ import { speak, stopSpeaking, useDictation } from "../lib/voice";
 import { FilePicker } from "./FilePicker";
 import type { Location, Selection } from "../lib/nav";
 import { Markdown } from "./Markdown";
+import { Icon } from "./Icon";
 
 interface Turn {
   question: string;
@@ -223,7 +224,7 @@ export function AssistantView({
               <div className="ai-answer">
                 <Markdown text={t.answer} onLink={onLink} />
                 <button type="button" className="link small read-aloud" onClick={() => speak(t.answer!)} title="Read this answer out loud">
-                  🔊 Read aloud
+                  <Icon name="speaker" size={15} /> Read aloud
                 </button>
               </div>
             ) : null}
@@ -274,7 +275,7 @@ export function AssistantView({
               <span key={k} className="pending-photo">
                 <img src={p} alt="Photo to send" />
                 <button type="button" aria-label="Remove photo" onClick={() => setPhotos((ps) => ps.filter((_, i) => i !== k))}>
-                  ×
+                  <Icon name="x" size={12} />
                 </button>
               </span>
             ))}
@@ -307,7 +308,7 @@ export function AssistantView({
               if (f) void imageToDataUrl(f).then((url) => setPhotos((ps) => [...ps, url].slice(-3)));
             }}
           >
-            📷
+            <Icon name="camera" size={20} />
           </FilePicker>
           <button
             type="button"
@@ -317,27 +318,35 @@ export function AssistantView({
             disabled={dictation.working}
             onClick={() => (dictation.listening ? dictation.stop() : void dictation.start())}
           >
-            {dictation.working ? "…" : "🎤"}
+            {dictation.working ? <span className="spinner small" aria-hidden /> : <Icon name={dictation.listening ? "stop" : "mic"} size={20} />}
           </button>
           <button
             type="button"
             className={`icon-btn big ${speakAnswers ? "active" : ""}`}
             title={speakAnswers ? "Answers are read aloud — click to turn off" : "Read answers aloud automatically"}
             aria-pressed={speakAnswers}
+            aria-label={speakAnswers ? "Stop reading answers aloud" : "Read answers aloud"}
             onClick={() => {
               if (speakAnswers) stopSpeaking();
               setSpeakAnswers((x) => !x);
             }}
           >
-            🔊
+            <Icon name={speakAnswers ? "speaker" : "speaker-off"} size={20} />
           </button>
           {busy ? (
             <button type="button" className="btn ghost small" onClick={() => abortRef.current?.abort()}>
               Stop
             </button>
           ) : null}
-          <button type="submit" className="btn primary" disabled={busy || (!input.trim() && !photos.length)}>
-            {busy ? "Working…" : "Ask"}
+          <button type="submit" className="btn primary ask-send" disabled={busy || (!input.trim() && !photos.length)} aria-label="Ask">
+            {busy ? (
+              "Working…"
+            ) : (
+              <>
+                <Icon name="send" size={16} />
+                <span>Ask</span>
+              </>
+            )}
           </button>
         </div>
         {dictation.error ? <p className="small composer-note error-text">{dictation.error}</p> : null}

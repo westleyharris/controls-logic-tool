@@ -4,6 +4,7 @@ import { plc5SnapshotTime, type HealthFinding } from "@core/logic/health";
 import type { AlarmEntry, CallNode, IoGroup, ScanStructure } from "@core/logic/overview";
 import type { Location, Selection } from "../lib/nav";
 import { StateBadge } from "./InsightViews";
+import { Icon } from "./Icon";
 
 function fmtSize(chars: number): string {
   if (chars > 1024 * 1024) return `${(chars / 1024 / 1024).toFixed(1)} MB`;
@@ -102,7 +103,7 @@ export function OverviewView({
         </div>
         <div className="pill-row">
           <button type="button" className="btn primary" onClick={() => onNavigate({ view: "assistant" })}>
-            ✦ Describe the problem to AI
+            <Icon name="sparkles" size={15} /> Describe the problem to AI
           </button>
           <button type="button" className="btn" onClick={() => onNavigate({ view: "troubleshoot" })}>
             Troubleshoot an output

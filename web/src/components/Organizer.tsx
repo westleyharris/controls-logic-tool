@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { ProjectModel, Routine } from "@core/model/types";
 import { toHash, type Location } from "../lib/nav";
+import { Icon } from "./Icon";
 
 interface TreeNode {
   id: string;
@@ -289,7 +290,7 @@ export function Organizer({
                 onClick={() => toggle(n.id)}
                 aria-label={expanded ? "Collapse" : "Expand"}
               >
-                ▸
+                <Icon name="chevron-right" size={14} />
               </button>
             ) : (
               <span className="twisty-spacer" />

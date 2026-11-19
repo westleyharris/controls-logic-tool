@@ -1,7 +1,16 @@
 import { useState } from "react";
 import { listModels, loadAiSettings, saveAiSettings } from "../lib/ai";
+import { Icon } from "./Icon";
 
-export function SettingsDialog({ onClose }: { onClose: () => void }) {
+export function SettingsDialog({
+  onClose,
+  theme,
+  onToggleTheme,
+}: {
+  onClose: () => void;
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
+}) {
   const current = loadAiSettings();
   const [apiKey, setApiKey] = useState(current?.apiKey ?? "");
   const [model, setModel] = useState(current?.model ?? "");
@@ -39,6 +48,22 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
         }}
       >
         <h2 className="modal-title">Settings</h2>
+        <h3 className="section-label">Appearance</h3>
+        <div className="seg" role="radiogroup" aria-label="Theme">
+          {(["light", "dark"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              role="radio"
+              aria-checked={theme === t}
+              className={`seg-btn ${theme === t ? "on" : ""}`}
+              onClick={() => theme !== t && onToggleTheme()}
+            >
+              <Icon name={t === "light" ? "sun" : "moon"} size={16} />
+              {t === "light" ? "Light" : "Dark"}
+            </button>
+          ))}
+        </div>
         <h3 className="section-label">Ask AI (OpenAI)</h3>
         <p className="muted small">
           Your key is stored only in this browser. When you click an Ask AI button, the rung, routine or AOI you're looking

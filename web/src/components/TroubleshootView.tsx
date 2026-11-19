@@ -7,6 +7,7 @@ import { describeBlocker } from "../lib/explain";
 import { verdictFor, writerWhere } from "../lib/troubleshoot";
 import type { Location, Selection } from "../lib/nav";
 import { searchItems, type SearchItem } from "../lib/search";
+import { Icon } from "./Icon";
 
 type Nav = { onNavigate: (loc: Location) => void; onSelect: (sel: Selection) => void };
 
@@ -91,13 +92,12 @@ function BlockerRow({
   return (
     <li>
       <div className="tblocker">
-        <span className="x" aria-hidden>
-          ✕
-        </span>
+        <Icon name="x" size={13} className="x" />
         <span className="tblocker-text">{d.text}</span>
         {d.ref && !loop ? (
           <button type="button" className="btn ghost small" onClick={() => setOpen((x) => !x)}>
-            {open ? "Hide" : "Why? ▸"}
+            {open ? "Hide" : "Why?"}
+            {open ? null : <Icon name="chevron-right" size={13} />}
           </button>
         ) : loop ? (
           <span className="muted small">(traced above)</span>
@@ -287,7 +287,7 @@ export function TroubleshootView({
         </div>
         <p className="view-desc">
           Pick a signal. You'll see every rung that writes it, whether each one has power in the saved values, and what's
-          blocking it — then follow any blocking condition back with <strong>Why? ▸</strong>.
+          blocking it — then follow any blocking condition back with <strong>Why?</strong>.
           {snapshot ? (
             <>
               {" "}
@@ -363,7 +363,7 @@ export function TroubleshootView({
                       <td className="mono tag-name">{o.label}</td>
                       <td className="desc-cell">{o.description}</td>
                       <td className="right nowrap">
-                        <span className="link small">Why? ▸</span>
+                        <span className="link small why-link">Why? <Icon name="chevron-right" size={13} /></span>
                       </td>
                     </tr>
                   ))}

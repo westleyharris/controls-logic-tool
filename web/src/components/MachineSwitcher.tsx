@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { groupMachines, platformLabel, type MachineSummary } from "../lib/machines";
 import { FilePicker } from "./FilePicker";
+import { Icon } from "./Icon";
 
 /** Top-bar dropdown: jump to another saved machine, the library, or add one. */
 export function MachineSwitcher({
@@ -44,10 +45,8 @@ export function MachineSwitcher({
           </span>
         ) : null}
         <span className="project-name">{current.name}</span>
-        <span className="muted small">{current.processor ?? platformLabel(current.platform)}</span>
-        <span className="caret" aria-hidden>
-          ▾
-        </span>
+        <span className="muted small switcher-proc">{current.processor ?? platformLabel(current.platform)}</span>
+        <Icon name="chevron-down" size={15} className="caret" />
       </button>
       {open ? (
         <div className="menu" role="menu">

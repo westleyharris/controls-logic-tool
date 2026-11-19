@@ -3,6 +3,7 @@ import type { Attachment } from "../lib/machines";
 import type { Location } from "../lib/nav";
 import { renderPdfPage, searchPages } from "../lib/pdf";
 import { FilePicker } from "./FilePicker";
+import { Icon } from "./Icon";
 
 export const DRAWING_ACCEPT = ".pdf,application/pdf,image/*";
 
@@ -155,7 +156,7 @@ export function DrawingsView({
                       aria-label={`Remove ${a.name}`}
                       onClick={() => window.confirm(`Remove “${a.name}” from this machine?`) && onDelete(a.id)}
                     >
-                      ×
+                      <Icon name="x" size={16} />
                     </button>
                   </li>
                 ))}
@@ -169,7 +170,7 @@ export function DrawingsView({
                 {selected.pageCount ? (
                   <span className="pager">
                     <button type="button" className="icon-btn" disabled={current <= 1} onClick={() => go(selected.id, current - 1)} aria-label="Previous page">
-                      ‹
+                      <Icon name="chevron-left" />
                     </button>
                     <span className="small">
                       {current} / {selected.pageCount}
@@ -181,7 +182,7 @@ export function DrawingsView({
                       onClick={() => go(selected.id, current + 1)}
                       aria-label="Next page"
                     >
-                      ›
+                      <Icon name="chevron-right" />
                     </button>
                   </span>
                 ) : null}

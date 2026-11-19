@@ -1682,7 +1682,7 @@ button.brand:hover {
 }
 .switcher-btn {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   max-width: 480px;
   height: 32px;
@@ -1700,7 +1700,7 @@ button.brand:hover {
 }
 .caret {
   color: var(--text-3);
-  font-size: 11px;
+  flex: none;
 }
 .menu {
   position: absolute;
@@ -2982,6 +2982,7 @@ body.resizing {
 .icon-btn.recording {
   border-color: var(--danger);
   background: var(--danger-soft);
+  color: var(--danger);
   animation: pulse 1.2s ease-in-out infinite;
 }
 @keyframes pulse {
@@ -3027,7 +3028,9 @@ body.resizing {
   text-align: center;
 }
 .read-aloud {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   margin: 6px 0 0;
 }
 .error-text {
@@ -3797,10 +3800,6 @@ body.resizing {
   .parts-total {
     min-width: calc(50% - 4px);
   }
-  .parts-table th:nth-child(5),
-  .parts-table td:nth-child(5) {
-    display: none;
-  }
   .lc-note {
     max-width: none;
   }
@@ -3890,4 +3889,296 @@ body.resizing {
 .modal-actions.wrap {
   flex-wrap: wrap;
   align-items: center;
+}
+
+/* ============================== Icons ============================== */
+.icon {
+  flex: none;
+  display: inline-block;
+  vertical-align: -0.18em;
+}
+.icon-btn .icon {
+  vertical-align: 0;
+}
+.pending-photo button {
+  display: grid;
+  place-items: center;
+}
+.blocker .x,
+.tblocker .x {
+  color: var(--danger);
+  margin-top: 2px;
+}
+.check-loc,
+.part-note-line,
+.why-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.check-loc .icon,
+.inline-ico {
+  color: var(--accent);
+}
+.ask-btn {
+  gap: 6px;
+}
+.ask-send {
+  gap: 6px;
+}
+.cloud-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.lc-note a {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+/* segmented control (Settings → theme) */
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  gap: 3px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  width: fit-content;
+}
+.seg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 7px;
+  color: var(--text-2);
+  font-weight: 600;
+}
+.seg-btn.on {
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+@media (max-width: 760px) {
+  /* Phone top bar: menu · machine · Ask AI · search · cloud · settings (theme lives in Settings) */
+  .theme-btn,
+  .brand.in-machine,
+  .switcher-proc {
+    display: none;
+  }
+  .switcher-btn {
+    gap: 6px;
+    padding: 0 8px;
+    height: 36px;
+  }
+  .switcher-btn .project-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .ask-btn {
+    width: 38px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+@media (max-width: 760px) {
+  /* Library on a phone: one column per machine, actions underneath */
+  .brand:not(.in-machine) .brand-name {
+    display: inline;
+  }
+  .machine-row {
+    flex-direction: column;
+  }
+  .machine-main {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px;
+  }
+  .machine-when {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .machine-tools {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding: 4px 6px;
+  }
+  .machine-tools .btn {
+    height: 34px;
+  }
+  .org-company {
+    padding: 4px 8px 8px;
+  }
+  .org-line {
+    margin-left: 4px;
+    padding-left: 8px;
+  }
+  .org-tools {
+    opacity: 1;
+  }
+  .org-fields {
+    grid-template-columns: 1fr;
+  }
+}
+.tab-short {
+  display: none;
+}
+@media (max-width: 760px) {
+  .lib-tab {
+    flex: 1 1 0;
+    padding: 8px 4px;
+  }
+  .tab-full {
+    display: none;
+  }
+  .tab-short {
+    display: inline;
+  }
+}
+.composer textarea.input {
+  font-family: var(--font);
+}
+@media (max-width: 760px) {
+  /* Ask AI on a phone: text box full width, buttons underneath */
+  .composer {
+    grid-template-columns: minmax(0, 1fr);
+    margin: 0 -12px calc(-48px - env(safe-area-inset-bottom));
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  }
+  .composer textarea.input {
+    font-size: 16px;
+    min-height: 48px;
+    resize: none;
+  }
+  .composer-actions {
+    align-items: center;
+  }
+  .composer-actions .ask-send {
+    margin-left: auto;
+    height: 40px;
+    padding: 0 18px;
+  }
+  .composer-actions .icon-btn.big {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+  }
+}
+@media (max-width: 760px) {
+  .rung {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+  .rung-num {
+    font-size: 12px;
+  }
+}
+@media (max-width: 760px) {
+  .toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .toolbar > .input.grow,
+  .toolbar > input.input:first-child {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 760px) {
+  /* Spare parts as cards on a phone */
+  .parts-table thead {
+    display: none;
+  }
+  .parts-table,
+  .parts-table tbody {
+    display: block;
+    width: 100%;
+  }
+  .parts-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 12px;
+    padding: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .parts-table tr:first-child {
+    border-top: 0;
+  }
+  .parts-table td {
+    display: block;
+    padding: 0 !important;
+    border: 0 !important;
+    text-align: left !important;
+  }
+  .parts-table .parts-cat-cell {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .parts-table .parts-qty {
+    grid-column: 2;
+    grid-row: 1;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .parts-table .parts-qty::after {
+    content: " installed";
+    font-weight: 400;
+    color: var(--text-3);
+    font-size: 12px;
+  }
+  .parts-table .parts-lc,
+  .parts-table .parts-uses {
+    grid-column: 1 / -1;
+  }
+  .parts-table .parts-uses::before,
+  .parts-table .parts-onhand::before {
+    content: attr(data-label) ": ";
+    color: var(--text-3);
+  }
+  .parts-table .parts-onhand {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+  .lc-select {
+    font-size: 16px;
+    font-weight: 600;
+    padding: 4px 8px;
+    max-width: 100%;
+  }
+  .library-wrap .lib-view.view {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+@media (max-width: 760px) {
+  .net-detail {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 45;
+    max-height: 62dvh;
+    margin: 0;
+    border-radius: 14px 14px 0 0;
+    border-bottom: 0;
+    box-shadow: var(--shadow);
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+  .net-detail::before {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: -4px auto 8px;
+    border-radius: 2px;
+    background: var(--line-strong);
+  }
 }

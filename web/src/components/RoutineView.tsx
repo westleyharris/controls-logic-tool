@@ -10,6 +10,7 @@ import type { LadderPrefs } from "../lib/prefs";
 import { AskAi } from "./AskAi";
 import { LadderDiagram } from "./LadderDiagram";
 import { OutputTree } from "./OutputTree";
+import { Icon } from "./Icon";
 
 const NO_RUNGS: Rung[] = [];
 
@@ -125,7 +126,7 @@ export function RoutineView({
           <span className="view-meta">{routine.type === "ladder" ? `${rungs.length} rungs` : null}</span>
           {!routine.encoded ? (
             <button type="button" className={`btn small ${showAi ? "primary" : ""}`} onClick={() => setShowAi((x) => !x)}>
-              ✦ Explain routine
+              <Icon name="sparkles" size={15} /> Explain routine
             </button>
           ) : null}
         </div>

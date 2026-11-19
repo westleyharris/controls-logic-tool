@@ -6,6 +6,7 @@ import type { AlarmEntry, IoGroup } from "@core/logic/overview";
 import type { Location, Selection } from "../lib/nav";
 import type { SearchItem } from "../lib/search";
 import { useKv } from "../lib/kv";
+import { Icon } from "./Icon";
 
 type Nav = { onNavigate: (loc: Location) => void; onSelect: (sel: Selection) => void };
 
@@ -85,7 +86,11 @@ function CheckRow({
           {item.description ? <span className="check-desc">{item.description}</span> : null}
         </div>
         <div className="check-meta small">
-          {item.io ? <span className="check-loc">📍 {item.io.location}</span> : null}
+          {item.io ? (
+            <span className="check-loc">
+              <Icon name="pin" size={13} /> {item.io.location}
+            </span>
+          ) : null}
           {item.note ? <span className="muted">{item.note}</span> : null}
           {mode === "checklist" ? <SavedState ok={item.ok} /> : null}
           {mode === "checklist" && item.via ? <span className="muted">for {item.via}</span> : null}
@@ -388,7 +393,7 @@ export function HandbookView({ index, alarms, machineKey, machineName, ...nav }:
                     <ul className="plain hb-checks small">
                       {checks.map((c) => (
                         <li key={c.id}>
-                          📍 <strong>{c.io!.location}</strong> — {c.description ?? c.label} <span className="mono muted">{c.label}</span>
+                          <Icon name="pin" size={13} className="inline-ico" /> <strong>{c.io!.location}</strong> — {c.description ?? c.label} <span className="mono muted">{c.label}</span>
                         </li>
                       ))}
                     </ul>

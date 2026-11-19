@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { HealthFinding } from "@core/logic/health";
 import type { Location, Selection } from "../lib/nav";
+import { Icon } from "./Icon";
 
 const ICON: Record<HealthFinding["severity"], string> = { error: "●", warning: "▲", info: "i" };
 const LABEL: Record<HealthFinding["severity"], string> = { error: "Problem", warning: "Warning", info: "Note" };
@@ -61,7 +62,7 @@ function Finding({
         <span className="finding-title">{f.title}</span>
         <span className="count">{f.total}</span>
         <span className={`twisty ${open ? "open" : ""}`} aria-hidden>
-          ▸
+          <Icon name="chevron-right" size={14} />
         </span>
       </button>
       <p className="finding-summary">{f.summary}</p>

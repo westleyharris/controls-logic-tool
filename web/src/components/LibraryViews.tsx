@@ -9,14 +9,15 @@ import { searchItems, type SearchKind } from "../lib/search";
 import type { IndexProgress } from "../lib/useInsights";
 import { FilePicker } from "./FilePicker";
 import { KIND_LABEL } from "./SearchPalette";
+import { Icon } from "./Icon";
 
 export type LibraryTab = "machines" | "search" | "network" | "parts";
 
-export const LIBRARY_TABS: { id: LibraryTab; label: string; hash: string }[] = [
-  { id: "machines", label: "Machines", hash: "#/" },
-  { id: "search", label: "Search all", hash: "#/library/search" },
-  { id: "network", label: "Network map", hash: "#/library/network" },
-  { id: "parts", label: "Spare parts", hash: "#/library/parts" },
+export const LIBRARY_TABS: { id: LibraryTab; label: string; short: string; hash: string }[] = [
+  { id: "machines", label: "Machines", short: "Machines", hash: "#/" },
+  { id: "search", label: "Search all", short: "Search", hash: "#/library/search" },
+  { id: "network", label: "Network map", short: "Network", hash: "#/library/network" },
+  { id: "parts", label: "Spare parts", short: "Parts", hash: "#/library/parts" },
 ];
 
 export function libraryTabFromHash(hash: string): LibraryTab {
@@ -29,7 +30,8 @@ export function LibraryTabs({ tab, onTab, progress }: { tab: LibraryTab; onTab: 
     <nav className="lib-tabs" aria-label="Library">
       {LIBRARY_TABS.map((t) => (
         <button key={t.id} type="button" className={`lib-tab ${tab === t.id ? "on" : ""}`} onClick={() => onTab(t.id)} aria-current={tab === t.id ? "page" : undefined}>
-          {t.label}
+          <span className="tab-full">{t.label}</span>
+          <span className="tab-short">{t.short}</span>
         </button>
       ))}
       {progress ? (
@@ -367,13 +369,13 @@ function NetworkMap({ net, pos, sel, onSel }: { net: Network; pos: Map<string, P
       </svg>
       <div className="netmap-controls">
         <button type="button" className="icon-btn" onClick={() => setView((v) => ({ x: v.x + v.w * 0.1, y: v.y + v.h * 0.1, w: v.w * 0.8, h: v.h * 0.8 }))} aria-label="Zoom in">
-          +
+          <Icon name="plus" />
         </button>
         <button type="button" className="icon-btn" onClick={() => setView((v) => ({ x: v.x - v.w * 0.125, y: v.y - v.h * 0.125, w: v.w * 1.25, h: v.h * 1.25 }))} aria-label="Zoom out">
-          −
+          <Icon name="minus" />
         </button>
         <button type="button" className="icon-btn" onClick={() => setView(bounds)} aria-label="Fit" title="Fit everything">
-          ⤢
+          <Icon name="fit" />
         </button>
       </div>
     </div>
@@ -587,7 +589,7 @@ export function NetworkView({
           {sel ? (
             <aside className="card net-detail">
               <button type="button" className="icon-btn net-close" onClick={() => setSel(null)} aria-label="Close">
-                ×
+                <Icon name="x" />
               </button>
               {detail()}
             </aside>
@@ -823,7 +825,7 @@ export function PartsView({ machines, insights, progress }: { machines: MachineS
               const onHand = notes[r.base]?.onHand;
               return (
                 <tr key={r.base} className={open ? "open" : ""}>
-                  <td>
+                  <td className="parts-cat-cell">
                     <button type="button" className="link mono parts-cat" onClick={() => setOpenRow(open ? null : r.base)} aria-expanded={open}>
                       {r.base}
                     </button>
@@ -844,10 +846,12 @@ export function PartsView({ machines, insights, progress }: { machines: MachineS
                         </label>
                       </div>
                     ) : notes[r.base]?.note ? (
-                      <div className="small">📝 {notes[r.base]!.note}</div>
+                      <div className="small part-note-line">
+                        <Icon name="note" size={13} /> {notes[r.base]!.note}
+                      </div>
                     ) : null}
                   </td>
-                  <td>
+                  <td className="parts-lc">
                     <select
                       className={`lc-select lc-${st}`}
                       value={notes[r.base]?.status ?? ""}
@@ -865,12 +869,14 @@ export function PartsView({ machines, insights, progress }: { machines: MachineS
                     <div className="muted small lc-note">
                       {notes[r.base]?.status ? "Set by you." : lc.note}{" "}
                       <a href={lifecycleUrl(r.base)} target="_blank" rel="noreferrer" className="no-print">
-                        Verify ↗
+                        Verify <Icon name="external" size={12} />
                       </a>
                     </div>
                   </td>
-                  <td className="num">{r.qty}</td>
-                  <td className="num">
+                  <td className="num parts-qty" data-label="Installed">
+                    {r.qty}
+                  </td>
+                  <td className="num parts-onhand" data-label="On hand">
                     <input
                       className={`input onhand ${onHand === 0 && ["discontinued", "phasing-out"].includes(st) ? "low" : ""}`}
                       type="number"
@@ -882,7 +888,9 @@ export function PartsView({ machines, insights, progress }: { machines: MachineS
                       aria-label={`Spares on hand of ${r.base}`}
                     />
                   </td>
-                  <td className="small">{r.uses.map((u) => `${u.machine.name}${u.entries.length > 1 ? ` ×${u.entries.length}` : ""}`).join(", ")}</td>
+                  <td className="small parts-uses" data-label="Used in">
+                    {r.uses.map((u) => `${u.machine.name}${u.entries.length > 1 ? ` ×${u.entries.length}` : ""}`).join(", ")}
+                  </td>
                 </tr>
               );
             })}
