@@ -2,7 +2,24 @@ import { useRef, type ReactNode } from "react";
 
 export const EXPORT_ACCEPT = ".pc5,.sy6,.sy5,.l5k,.l5x,.slc,.csv";
 
-/** A button that opens the OS file picker for PLC export files. */
+/**
+ * Phones and tablets: iOS and Android only offer files whose type they know,
+ * so a filter of PLC extensions (.L5K, .SLC, .PC5…) greys every export out.
+ * There we show all files and check the extension after picking instead.
+ */
+function isTouchDevice(): boolean {
+  if (typeof window === "undefined") return false;
+  const ua = navigator.userAgent;
+  return (
+    /iPhone|iPad|iPod|Android/i.test(ua) ||
+    (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) || // iPadOS asks for the desktop site
+    !!window.matchMedia?.("(pointer: coarse)").matches
+  );
+}
+
+const extOf = (name: string) => name.toLowerCase().match(/\.[a-z0-9]+$/)?.[0] ?? "";
+
+/** A button that opens the OS file picker (PLC export files by default). */
 export function FilePicker({
   onFiles,
   className,
@@ -22,6 +39,11 @@ export function FilePicker({
   capture?: "environment" | "user";
 }) {
   const ref = useRef<HTMLInputElement>(null);
+  // Only plain extension lists need this; "image/*" and PDFs are types phones know.
+  const extensions = accept.split(",").map((a) => a.trim().toLowerCase());
+  const extensionOnly = extensions.every((a) => a.startsWith("."));
+  const unfiltered = extensionOnly && isTouchDevice();
+
   return (
     <>
       <button type="button" className={className} title={title} onClick={() => ref.current?.click()}>
@@ -31,12 +53,23 @@ export function FilePicker({
         ref={ref}
         type="file"
         multiple={multiple}
-        accept={accept}
+        {...(unfiltered ? {} : { accept })}
         {...(capture ? { capture } : {})}
         hidden
         onChange={(e) => {
-          const files = [...(e.target.files ?? [])];
+          let files = [...(e.target.files ?? [])];
           e.target.value = "";
+          if (extensionOnly) {
+            const wrong = files.filter((f) => !extensions.includes(extOf(f.name)));
+            files = files.filter((f) => extensions.includes(extOf(f.name)));
+            if (wrong.length) {
+              window.alert(
+                `${wrong.map((f) => f.name).join(", ")} ${wrong.length === 1 ? "isn't" : "aren't"} a PLC export.\n\n` +
+                  "Pick the .L5K or .L5X (ControlLogix/CompactLogix), the .SLC (SLC 500), or the .PC5 together with its .SY6 (PLC-5)." +
+                  (files.length ? "\n\nContinuing with the other files." : ""),
+              );
+            }
+          }
           if (files.length) onFiles(files);
         }}
       />
