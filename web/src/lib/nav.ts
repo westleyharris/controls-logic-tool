@@ -22,7 +22,8 @@ export type Location =
   | { view: "connections" }
   | { view: "checklist"; ref?: string; where?: Scope }
   | { view: "handbook" }
-  | { view: "drawings"; id?: string; page?: number };
+  | { view: "drawings"; id?: string; page?: number }
+  | { view: "hmi"; tab?: "screens" | "alarms"; screen?: string; object?: string };
 
 /** What the inspector shows. */
 export type Selection =
@@ -70,6 +71,11 @@ export function toHash(loc: Location): string {
         : "#/checklist";
     case "drawings":
       return loc.id ? `#/drawings?a=${enc(loc.id)}&p=${loc.page ?? 1}` : "#/drawings";
+    case "hmi": {
+      if (loc.tab === "alarms") return "#/hmi/alarms";
+      if (!loc.screen) return "#/hmi";
+      return `#/hmi/screen/${enc(loc.screen)}${loc.object ? `/${enc(loc.object)}` : ""}`;
+    }
     case "troubleshoot":
       return loc.ref
         ? `#/troubleshoot?r=${enc(loc.ref)}${loc.where ? `&w=${enc(JSON.stringify(loc.where))}` : ""}`
@@ -140,6 +146,10 @@ export function fromHash(hash: string): Location | null {
       const id = params.get("a");
       return id ? { view: "drawings", id, page: Number(params.get("p") ?? 1) || 1 } : { view: "drawings" };
     }
+    case "hmi":
+      if (a === "alarms") return { view: "hmi", tab: "alarms" };
+      if (a === "screen" && b) return c ? { view: "hmi", screen: b, object: c } : { view: "hmi", screen: b };
+      return { view: "hmi" };
     case "troubleshoot": {
       const ref = params.get("r");
       if (!ref) return { view: "troubleshoot" };

@@ -1,6 +1,8 @@
 import { useRef, type ReactNode } from "react";
 
-export const EXPORT_ACCEPT = ".pc5,.sy6,.sy5,.l5k,.l5x,.slc,.csv";
+export const EXPORT_ACCEPT = ".pc5,.sy6,.sy5,.l5k,.l5x,.slc,.csv,.mer,.apa";
+/** Operator panel files only (FactoryTalk View ME runtime / project archive). */
+export const PANEL_ACCEPT = ".mer,.apa";
 
 /**
  * Phones and tablets: iOS and Android only offer files whose type they know,
@@ -64,8 +66,10 @@ export function FilePicker({
             files = files.filter((f) => extensions.includes(extOf(f.name)));
             if (wrong.length) {
               window.alert(
-                `${wrong.map((f) => f.name).join(", ")} ${wrong.length === 1 ? "isn't" : "aren't"} a PLC export.\n\n` +
-                  "Pick the .L5K or .L5X (ControlLogix/CompactLogix), the .SLC (SLC 500), or the .PC5 together with its .SY6 (PLC-5)." +
+                `${wrong.map((f) => f.name).join(", ")} ${wrong.length === 1 ? "isn't" : "aren't"} ${accept === PANEL_ACCEPT ? "a panel file" : "a PLC export"}.\n\n` +
+                  (accept === PANEL_ACCEPT
+                    ? "Pick the PanelView Plus runtime file (.MER) or the FactoryTalk View project archive (.APA)."
+                    : "Pick the .L5K or .L5X (ControlLogix/CompactLogix), the .SLC (SLC 500), or the .PC5 together with its .SY6 (PLC-5). The panel's .MER or .APA can go with it.") +
                   (files.length ? "\n\nContinuing with the other files." : ""),
               );
             }

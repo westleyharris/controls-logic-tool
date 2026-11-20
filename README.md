@@ -51,6 +51,12 @@ Machines are organized **Company → Line → Machine**. Groups are collapsible,
 - **Connections:** this machine's messages grouped by partner, with a jump to the rung and to the plant network map.
 - **Drawings:** attach electrical drawings (PDF or photos) to a machine. PDF text is indexed, so the inspector shows which drawing pages mention an address. Ask AI can search the drawings and look at pages.
 - **Ask AI with photos and voice:** add a photo of a panel or HMI screen, dictate the question, and have the answer read aloud.
+- **Operator panel (PanelView Plus):** add the panel's FactoryTalk View ME runtime file (.MER) or project archive (.APA) to a machine, with or without its PLC export. You get:
+  - Every screen drawn the way the panel shows it: colours, raised borders, outlines, pictures and fonts from the file, with each indicator in the state its saved PLC value selects. A plain sketch is one click away.
+  - Per button or indicator, the PLC address it writes or shows, and which screen a goto button opens.
+  - Alarm messages with their trigger word and the rung that moves each message number into it.
+  - The inspector's "On the panel" list for any address. Search covers screens, buttons and messages. Ask AI gets a `search_panel` tool.
+  - The files are read directly. No FactoryTalk View Studio export is needed.
 
 ## What you get today (Phases 1–4)
 
@@ -105,8 +111,10 @@ Machines are organized **Company → Line → Machine**. Groups are collapsible,
 src/            Shared importer core (pure TypeScript, runs in a Web Worker and in Node)
   importers/    pc5, sy6, l5k (+ l5kValues: tag value decoding), importFiles()
   ladder/       Rung text → ladder AST (classic BST/NXB/BND and Logix neutral text)
+  importers/hmi FactoryTalk View ME .MER / .APA: compound-file reader, stream decoder, screens / alarms / shortcuts
   logic/        Instruction catalog, power flow, trace, health, overview, connectivity (messages),
-                parts (hardware + lifecycle), checklist (start-up checklist / alarm handbook)
+                parts (hardware + lifecycle), checklist (start-up checklist / alarm handbook),
+                hmi (panel ↔ PLC links, rungs that raise each alarm message)
   xref/         Scope-aware cross reference (read vs write per operand)
   query/        ProjectIndex: resolve any address/tag → description, type, saved value, hits
   cli/          Test harness

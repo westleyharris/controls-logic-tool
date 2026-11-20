@@ -10,7 +10,7 @@ import {
   type MachineDetails,
   type MachineSummary,
 } from "../lib/machines";
-import { FilePicker } from "./FilePicker";
+import { FilePicker, PANEL_ACCEPT } from "./FilePicker";
 import { Icon } from "./Icon";
 
 function when(ts: number | undefined): string {
@@ -160,7 +160,8 @@ export function MachineLibrary({
         <button type="button" className="machine-main" onClick={() => onOpen(m.id)}>
           <span className="machine-name">{m.name}</span>
           <span className="machine-meta">
-            <span className="chip">{platformLabel(m.platform)}</span>
+            {m.platform !== "unknown" ? <span className="chip">{platformLabel(m.platform)}</span> : null}
+            {m.fileNames.some((n) => /\.(mer|apa)$/i.test(n)) ? <span className="chip">{m.platform === "unknown" ? "Panel only" : "+ Panel"}</span> : null}
             {m.processor ? <span className="mono small">{m.processor}</span> : null}
             {m.location ? <span>{m.location}</span> : null}
             {m.remote ? (
@@ -185,8 +186,17 @@ export function MachineLibrary({
           <button type="button" className="btn ghost small" onClick={() => setEditing(m.id)}>
             Edit
           </button>
-          <FilePicker className="btn ghost small" onFiles={(files) => onUpdateExport(m.id, files)} title="Replace this machine's export with a newer one">
+          <FilePicker className="btn ghost small" onFiles={(files) => onUpdateExport(m.id, files)} title="Replace this machine's PLC export (or panel file) with a newer one">
             Update export
+          </FilePicker>
+          <FilePicker
+            className="btn ghost small"
+            accept={PANEL_ACCEPT}
+            multiple={false}
+            onFiles={(files) => onUpdateExport(m.id, files)}
+            title="Add the operator panel's .MER or .APA (FactoryTalk View ME)"
+          >
+            {m.fileNames.some((n) => /\.(mer|apa)$/i.test(n)) ? "Update panel" : "+ Panel"}
           </FilePicker>
           <button
             type="button"
@@ -216,7 +226,7 @@ export function MachineLibrary({
           {machines.length > 4 ? (
             <input className="input" placeholder="Find a company, line or machine…" value={filter} onChange={(e) => setFilter(e.target.value)} />
           ) : null}
-          <FilePicker className="btn primary" onFiles={(f) => onAdd(f)} title="Pick the machine's .PC5 + .SY6, .SLC, .L5K or .L5X export">
+          <FilePicker className="btn primary" onFiles={(f) => onAdd(f)} title="Pick the machine's .PC5 + .SY6, .SLC, .L5K or .L5X export (and its panel's .MER or .APA)">
             + Add machine
           </FilePicker>
         </div>
@@ -230,7 +240,8 @@ export function MachineLibrary({
           <p className="muted">
             Add a machine by picking its PLC export — <span className="mono">.PC5</span> with its <span className="mono">.SY6</span> for
             PLC-5, the <span className="mono">.SLC</span> for SLC 500, or the <span className="mono">.L5K</span> /{" "}
-            <span className="mono">.L5X</span> for ControlLogix / CompactLogix. You&apos;ll file it under a company and line.
+            <span className="mono">.L5X</span> for ControlLogix / CompactLogix. Add the operator panel&apos;s <span className="mono">.MER</span> or{" "}
+            <span className="mono">.APA</span> with it (or on its own). You&apos;ll file it under a company and line.
           </p>
           <FilePicker className="btn primary" onFiles={(f) => onAdd(f)}>
             + Add machine
@@ -457,9 +468,19 @@ export function AddMachineDialog({
       >
         <h2 className="modal-title">Add machine</h2>
         <p className="muted small">
-          Read {fileNames.join(", ")} — {platformLabel(model.platform)}
-          {model.controller.processorType ? ` ${model.controller.processorType}` : ""}, {s.programCount} programs,{" "}
-          {s.rungCount.toLocaleString()} rungs.
+          Read {fileNames.join(", ")} —{" "}
+          {s.programCount ? (
+            <>
+              {platformLabel(model.platform)}
+              {model.controller.processorType ? ` ${model.controller.processorType}` : ""}, {s.programCount} programs, {s.rungCount.toLocaleString()} rungs
+            </>
+          ) : (
+            "no PLC program yet (add its export later with Update export)"
+          )}
+          {model.hmi?.length
+            ? `; panel ${model.hmi.map((h) => `${h.application} with ${h.screens.length} screens and ${h.messages.length} alarm messages`).join(", ")}`
+            : ""}
+          .
         </p>
         {model.warnings.length ? (
           <ul className="notice small">

@@ -56,6 +56,20 @@ function buildTree(project: ProjectModel, issues: number, activeAlarms: number, 
     },
     { id: "assistant", label: "Ask AI", icon: "spark", loc: { view: "assistant" } },
     { id: "troubleshoot", label: "Troubleshoot", icon: "search", loc: { view: "troubleshoot" } },
+    ...(project.hmi ?? []).map(
+      (h, i): TreeNode => ({
+        id: `hmi:${i}`,
+        label: project.hmi!.length > 1 ? `Panel ${h.application}` : "Operator panel",
+        detail: `${h.screens.length} screens`,
+        icon: "panel",
+        loc: { view: "hmi" },
+        children: [
+          { id: `hmi:${i}:alarms`, label: "Alarm messages", icon: "alarm", loc: { view: "hmi", tab: "alarms" }, badge: String(h.messages.length) },
+          ...h.screens.map((sc): TreeNode => ({ id: `hmi:${i}:s:${sc.name}`, label: sc.name, icon: "screen", loc: { view: "hmi", screen: sc.name } })),
+        ],
+      }),
+    ),
+    ...(project.hmi?.length ? [] : [{ id: "hmi", label: "Operator panel", detail: "add .MER / .APA", icon: "panel", muted: true, loc: { view: "hmi" } } as TreeNode]),
     {
       id: "health",
       label: "Health checks",
@@ -77,6 +91,12 @@ function buildTree(project: ProjectModel, issues: number, activeAlarms: number, 
     { id: "drawings", label: "Drawings", icon: "drawing", loc: { view: "drawings" }, ...(drawings ? { badge: String(drawings) } : {}) },
     { id: "structure", label: "Scan structure", icon: "task", loc: { view: "structure" } },
   ];
+
+  // Panel-only machine (no PLC export yet): just the panel, AI and drawings.
+  if (!project.programs.length && project.hmi?.length) {
+    const keep = new Set(["assistant", "drawings"]);
+    return nodes.filter((n) => keep.has(n.id) || n.id.startsWith("hmi"));
+  }
 
   if (project.platform === "logix") {
     nodes.push({ id: "ctags", label: "Controller Tags", icon: "tags", loc: { view: "tags", scope: "" } });

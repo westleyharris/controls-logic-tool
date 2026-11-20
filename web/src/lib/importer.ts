@@ -55,6 +55,8 @@ export async function analyzeInWorker(files: InputFile[]): Promise<AnalysisResul
  */
 export async function readExportFile(file: File): Promise<InputFile> {
   const bytes = new Uint8Array(await file.arrayBuffer());
+  // Operator panel files are binary.
+  if (/\.(mer|apa)$/i.test(file.name)) return { name: file.name, text: "", bytes };
   let text: string;
   if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
     text = new TextDecoder("utf-8").decode(bytes.subarray(3));

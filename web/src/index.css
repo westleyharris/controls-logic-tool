@@ -32,6 +32,12 @@
   --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
   --organizer-w: 290px;
   --inspector-w: 370px;
+  --hmi-bg: #d9dee5;
+  --hmi-btn: #f4f6f9;
+  --hmi-btn-line: #8a96a6;
+  --hmi-ind: #ffffff;
+  --hmi-display: #0f1720;
+  --hmi-display-text: #7ee787;
   color-scheme: light;
 }
 
@@ -64,6 +70,12 @@
     --wire: #9aa6b4;
     --glyph: #9cc7ff;
     --shadow: 0 12px 34px rgba(0, 0, 0, 0.45);
+    --hmi-bg: #1a2029;
+    --hmi-btn: #2c3542;
+    --hmi-btn-line: #5b6878;
+    --hmi-ind: #121820;
+    --hmi-display: #05080c;
+    --hmi-display-text: #7ee787;
     color-scheme: dark;
   }
 }
@@ -96,6 +108,12 @@
   --wire: #9aa6b4;
   --glyph: #9cc7ff;
   --shadow: 0 12px 34px rgba(0, 0, 0, 0.45);
+  --hmi-bg: #1a2029;
+  --hmi-btn: #2c3542;
+  --hmi-btn-line: #5b6878;
+  --hmi-ind: #121820;
+  --hmi-display: #05080c;
+  --hmi-display-text: #7ee787;
   color-scheme: dark;
 }
 
@@ -519,6 +537,13 @@ kbd {
 }
 .ico-task {
   --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.8'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='M8 4.5V8l2.5 1.5'/%3E%3C/svg%3E");
+}
+.ico-panel {
+  --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6'%3E%3Crect x='1.5' y='2' width='13' height='9.5' rx='1'/%3E%3Cpath d='M5 14.5h6M8 11.5v3'/%3E%3C/svg%3E");
+  background: #0e8a7a;
+}
+.ico-screen {
+  --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6'%3E%3Crect x='1.5' y='3' width='13' height='10' rx='1'/%3E%3Cpath d='M4 6.5h4M4 9.5h8'/%3E%3C/svg%3E");
 }
 .ico-rack {
   --ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6'%3E%3Crect x='1.5' y='3' width='13' height='10' rx='1'/%3E%3Cpath d='M4.5 3v10M7.5 3v10M10.5 3v10'/%3E%3C/svg%3E");
@@ -4181,4 +4206,307 @@ body.resizing {
     border-radius: 2px;
     background: var(--line-strong);
   }
+}
+
+/* ============================== Operator panel ============================== */
+.hmi-view {
+  container-type: inline-size;
+}
+.hmi-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.hmi-list {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: calc(100dvh - 140px);
+}
+.hmi-list-select {
+  display: none;
+}
+.hmi-list-items {
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  padding: 4px;
+}
+.hmi-list-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.hmi-list-item:hover {
+  background: var(--panel-2);
+}
+.hmi-list-item.on {
+  background: var(--accent-soft);
+  color: var(--text);
+  font-weight: 600;
+}
+.hmi-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.hmi-screen-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+.hmi-screen-head .card-title {
+  margin: 0;
+}
+.hmi-screen-wrap {
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--hmi-bg);
+  box-shadow: var(--shadow);
+}
+.hmi-screen {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: Arial, var(--font);
+  user-select: none;
+}
+.hmi-bg {
+  fill: var(--hmi-bg);
+}
+.hmi-o.clickable {
+  cursor: pointer;
+}
+.hmi-o-shape {
+  fill: none;
+  stroke: var(--hmi-btn-line);
+  stroke-opacity: 0.45;
+}
+.hmi-o-button {
+  fill: var(--hmi-btn);
+  stroke: var(--hmi-btn-line);
+  stroke-width: 1.5;
+}
+.hmi-o-button.input {
+  stroke: var(--warn);
+}
+.hmi-o-indicator {
+  fill: var(--hmi-ind);
+  stroke: var(--accent-line);
+}
+.hmi-o-display {
+  fill: var(--hmi-display);
+  stroke: var(--hmi-btn-line);
+}
+.hmi-o-other {
+  fill: none;
+  stroke: var(--hmi-btn-line);
+  stroke-dasharray: 4 3;
+}
+.hmi-o.clickable:hover .hmi-o-button,
+.hmi-o.clickable:hover .hmi-o-indicator,
+.hmi-o.clickable:hover .hmi-o-display,
+.hmi-o.clickable:hover .hmi-o-other {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.hmi-o-sel {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+.hmi-t-text {
+  fill: var(--text);
+}
+.hmi-t-button,
+.hmi-t-indicator {
+  fill: var(--text);
+  font-weight: 700;
+}
+.hmi-t-display {
+  fill: var(--hmi-display-text);
+  font-family: var(--mono);
+}
+.hmi-t-other {
+  fill: var(--text-3);
+}
+.hmi-caveat {
+  margin: -4px 0 0;
+}
+.hmi-detail {
+  border-color: var(--accent-line);
+}
+.hmi-detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.hmi-detail-head .card-title {
+  margin: 0 0 2px;
+}
+.hmi-states {
+  margin: 4px 0 8px;
+  padding-left: 22px;
+}
+.hmi-conns > li {
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+.hmi-expr {
+  flex-basis: 100%;
+  word-break: break-all;
+}
+.hmi-ref {
+  display: inline-block;
+  margin: 1px 6px 1px 0;
+}
+.access-write {
+  color: var(--write) !important;
+}
+.access-readwrite {
+  color: var(--warn) !important;
+}
+.access-read {
+  color: var(--read) !important;
+}
+.access-animation {
+  color: var(--text-3) !important;
+}
+.chip.access-write {
+  background: rgba(180, 83, 9, 0.12);
+}
+.chip.access-read {
+  background: var(--accent-soft);
+}
+.chip.access-readwrite {
+  background: var(--warn-soft);
+}
+.on-chip {
+  margin-left: 6px;
+  color: var(--on);
+  background: var(--on-soft);
+}
+.hmi-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hmi-table tr.selected td {
+  background: var(--accent-soft);
+}
+.hmi-alarms {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.hmi-alarms .card p {
+  margin: 0 0 6px;
+}
+.hmi-raiser {
+  display: block;
+  text-align: left;
+}
+.hmi-msg-table td:first-child {
+  width: 1%;
+  white-space: nowrap;
+}
+.hmi-warnings {
+  margin-top: 16px;
+}
+/* Narrow centre column (side panes open, or a phone): list becomes a picker. */
+@container (max-width: 720px) {
+  .hmi-layout {
+    display: block;
+  }
+  .hmi-list {
+    position: static;
+    max-height: none;
+    margin-bottom: 12px;
+  }
+  .hmi-list-items {
+    display: none;
+  }
+  .hmi-list-select {
+    display: block;
+  }
+}
+@media (max-width: 760px) {
+  .hmi-layout {
+    display: block;
+  }
+  .hmi-list {
+    position: static;
+    max-height: none;
+    margin-bottom: 12px;
+  }
+  .hmi-list-items {
+    display: none;
+  }
+  .hmi-list-select {
+    display: block;
+    font-size: 16px;
+  }
+  .hmi-table thead,
+  .hmi-msg-table thead {
+    display: none;
+  }
+  .hmi-table tr,
+  .hmi-msg-table tr {
+    display: block;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .hmi-table td,
+  .hmi-msg-table td {
+    display: block;
+    padding: 1px 0 !important;
+    border: 0 !important;
+  }
+  .hmi-table td:first-child,
+  .hmi-msg-table td:nth-child(2) {
+    font-weight: 600;
+  }
+  .hmi-msg-table td:first-child::before {
+    content: "Message ";
+    color: var(--text-3);
+  }
+  .hmi-msg-table td[data-label="Raised by"]:not(:empty)::before {
+    content: "Raised by ";
+    color: var(--text-3);
+  }
+}
+.hmi-look {
+  margin-left: auto;
+}
+.hmi-look .seg-btn {
+  padding: 3px 10px;
+  font-size: 12px;
+}
+.hmi-screen-wrap.looks {
+  background: #000;
+}
+.hmi-screen-wrap.looks .hmi-o.clickable:hover > rect:first-child,
+.hmi-screen-wrap.looks .hmi-o.clickable:hover > polygon {
+  stroke: var(--accent) !important;
+  stroke-width: 2 !important;
 }

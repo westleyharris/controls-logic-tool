@@ -17,6 +17,7 @@ import { evaluate } from "./power";
 import { verdictFor } from "./troubleshoot";
 import type { Attachment } from "./machines";
 import { addressVariants, imageToDataUrl, renderPdfPage, searchPages } from "./pdf";
+import { hmiAlarms, hmiLinksCached } from "@core/logic/hmi";
 
 /* --------------------------------- messages --------------------------------- */
 
@@ -39,6 +40,20 @@ export interface AgentStep {
 }
 
 /* ----------------------------------- tools ----------------------------------- */
+
+const PANEL_TOOL = {
+  type: "function",
+  function: {
+    name: "search_panel",
+    description:
+      "Search the operator panel (HMI) of this machine: screen names, button / indicator captions, PLC addresses on the screens, and the alarm message texts with their number and the rung that raises them. Use it when the user quotes what the screen says, names a button, or asks where something is on the HMI.",
+    parameters: {
+      type: "object",
+      properties: { text: { type: "string", description: "Words or an address, e.g. 'partial load', 'N23:1/5', 'hoist down'" } },
+      required: ["text"],
+    },
+  },
+} as const;
 
 const TOOLS = [
   {
@@ -139,6 +154,7 @@ const TOOLS = [
       },
     },
   },
+  PANEL_TOOL,
 ] as const;
 
 /** Things the tools can use besides the parsed program. */
@@ -319,6 +335,14 @@ export async function runTool(
         }
         return { label: `Searched rungs for “${String(args.text)}” — ${out.length} found`, result: JSON.stringify(out) };
       }
+      case "search_panel": {
+        const text = String(args.text ?? "");
+        const r = searchPanel(index, text);
+        return {
+          label: `Searched the panel for “${text}” — ${r.objects.length + r.messages.length} found`,
+          result: clip(JSON.stringify(r)),
+        };
+      }
       case "list_alarms": {
         const activeOnly = args.active_only !== false;
         const list = findAlarms(index).filter((a) => !activeOnly || a.active === true).slice(0, 40);
@@ -370,6 +394,69 @@ export async function runTool(
   }
 }
 
+/** Panel objects and alarm messages matching every word (or an address). */
+function searchPanel(index: ProjectIndex, text: string) {
+  const words = text.toLowerCase().split(/\s+/).filter(Boolean);
+  const hits = (hay: string) => words.length > 0 && words.every((w) => hay.includes(w));
+  const links = hmiLinksCached(index);
+  const hasLogic = index.project.programs.length > 0;
+  // Same button / indicator repeated on many screens → one entry listing the screens.
+  const found = new Map<string, { entry: Record<string, unknown>; screens: string[] }>();
+  for (const hmi of index.project.hmi ?? []) {
+    for (const screen of hmi.screens) {
+      for (const o of screen.objects) {
+        if (o.kind === "shape" || o.kind === "group") continue;
+        const addrs = [...new Set(o.connections.flatMap((c) => c.refs.map((r) => r.address)))];
+        const hay = `${o.captions.join(" ")} ${o.name} ${screen.name} ${addrs.join(" ")}`.toLowerCase();
+        if (!hits(hay) && !hits(screen.name.toLowerCase())) continue;
+        const key = `${o.type}|${o.captions.join("|")}|${addrs.join(",")}`;
+        const seen = found.get(key);
+        if (seen) {
+          seen.screens.push(screen.name);
+          continue;
+        }
+        if (found.size >= 25) continue;
+        const captions = o.captions.map((c) => c.replace(/\s+/g, " "));
+        // Indicators can have dozens of state texts: keep the ones that match.
+        const shownCaptions = captions.length > 4 ? captions.filter((c, n) => n === 0 || hits(c.toLowerCase())).slice(0, 6) : captions;
+        const entry: Record<string, unknown> = {
+          object: o.name,
+          type: o.type,
+          captions: shownCaptions,
+          ...(captions.length > shownCaptions.length ? { states_total: captions.length } : {}),
+          ...(o.goto ? { opens_screen: o.goto } : {}),
+          connections: o.connections
+            .filter((c) => c.access !== "animation")
+            .flatMap((c) =>
+              c.refs.map((r) => {
+                const local = hasLogic && !!r.shortcut && links.local.has(r.shortcut.toLowerCase());
+                const info = local ? index.resolve(r.address, { kind: "program", owner: "" }) : undefined;
+                return {
+                  access: c.access === "write" ? "panel writes it" : c.access === "readwrite" ? "entered on the panel" : "shown on the panel",
+                  address: r.address,
+                  ...(info?.description ? { description: info.description } : {}),
+                  ...(info?.hasValue ? { saved_value: formatValue(info.value, 20) } : {}),
+                };
+              }),
+            ),
+        };
+        found.set(key, { entry, screens: [screen.name] });
+      }
+    }
+  }
+  const objects = [...found.values()].map(({ entry, screens }) => ({ screens: screens.slice(0, 8), ...(screens.length > 8 ? { on_screens: screens.length } : {}), ...entry }));
+  const messages = hmiAlarms(index, links)
+    .filter((m) => hits(m.text.toLowerCase()) || words.join(" ") === String(m.value))
+    .slice(0, 15)
+    .map((m) => ({
+      number: m.value,
+      text: m.text,
+      trigger: m.trigger?.refs[0]?.address,
+      raised_by: m.raisers.map((r) => `${r.where.owner}/${r.where.routine}/${r.rung} (${r.detail})`),
+    }));
+  return { objects, messages };
+}
+
 /* ------------------------------- system prompt ------------------------------- */
 
 export function agentSystemPrompt(index: ProjectIndex, attachments: Attachment[] = []): string {
@@ -384,6 +471,7 @@ Machine: ${p.name} — ${index.isLogix ? "ControlLogix/CompactLogix (Studio 5000
 ${snapshot ? `Saved values are a snapshot from ${snapshot} (processor clock), not live.` : "Saved values are a snapshot from when the file was saved, not live."}
 Programs:
 ${programs.slice(0, 6000)}
+${p.hmi?.length ? `Operator panel: ${p.hmi.map((h) => `${h.application} (${h.screens.length} screens, ${h.messages.length} alarm messages${h.triggers[0]?.refs[0] ? `; the PLC puts the message number in ${h.triggers[0].refs[0].address}` : ""})`).join("; ")}. Use search_panel for anything the user reads off the screen or presses on it.` : "No operator panel file is attached."}
 ${attachments.length ? `Attached drawings: ${attachments.map((a) => `${a.name}${a.pageCount ? ` (${a.pageCount} pages)` : ""}`).join(", ")}` : "No electrical drawings are attached yet."}
 
 How to work:
@@ -393,7 +481,7 @@ How to work:
 4. If the saved value contradicts the user (they say it's ON but it was saved OFF), say so — the snapshot may predate the problem — and explain what turns it ON and what turns it OFF.
 
 Drawings and photos:
-- If the user attaches a photo (HMI alarm screen, wire label, terminal strip, device nameplate, panel), read every bit of text in it and use search_signals / find_rungs / search_drawings to find what it refers to.
+- If the user attaches a photo (HMI alarm screen, wire label, terminal strip, device nameplate, panel), read every bit of text in it and use search_panel / search_signals / find_rungs / search_drawings to find what it refers to (an alarm text on the screen is usually in search_panel with the rung that raises it).
 - Use list_drawings / search_drawings / view_drawing_page to find where a device or I/O point is wired: terminal numbers, wire numbers, fuses, relays in the circuit. Cite drawing pages as "Drawing <name> p.<n>".
 
 Answer format:

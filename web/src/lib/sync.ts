@@ -67,17 +67,26 @@ function uid(): string {
 
 /* ----------------------------------- gzip ----------------------------------- */
 
-async function gzipText(text: string): Promise<Blob> {
-  const raw = new Blob([text], { type: "text/plain" });
+/** Binary export files (operator panels) are stored as bytes, not text. */
+const isBinaryExport = (name: string) => /\.(mer|apa)$/i.test(name);
+
+async function gzipFile(f: InputFile): Promise<Blob> {
+  const raw = f.bytes ? new Blob([f.bytes as Uint8Array<ArrayBuffer>], { type: "application/octet-stream" }) : new Blob([f.text], { type: "text/plain" });
   if (typeof CompressionStream === "undefined") return raw;
   return new Response(raw.stream().pipeThrough(new CompressionStream("gzip"))).blob();
 }
 
-async function gunzipText(blob: Blob): Promise<string> {
+async function gunzip(blob: Blob): Promise<Blob> {
   const head = new Uint8Array(await blob.slice(0, 2).arrayBuffer());
   const gz = head[0] === 0x1f && head[1] === 0x8b;
-  if (!gz || typeof DecompressionStream === "undefined") return blob.text();
-  return new Response(blob.stream().pipeThrough(new DecompressionStream("gzip"))).text();
+  if (!gz || typeof DecompressionStream === "undefined") return blob;
+  return new Response(blob.stream().pipeThrough(new DecompressionStream("gzip"))).blob();
+}
+
+async function gunzipFile(name: string, blob: Blob): Promise<InputFile> {
+  const plain = await gunzip(blob);
+  if (isBinaryExport(name)) return { name, text: "", bytes: new Uint8Array(await plain.arrayBuffer()) };
+  return { name, text: await plain.text() };
 }
 
 /* --------------------------------- machines --------------------------------- */
@@ -123,7 +132,7 @@ async function uploadFiles(m: Machine): Promise<void> {
     const path = exportPath(id, m.id, i, f.name);
     keep.add(path.split("/").pop()!);
     setCloudState({ progress: `Uploading ${f.name}…` });
-    const { error } = await sb.storage.from(BUCKET).upload(path, await gzipText(f.text), { upsert: true, contentType: "application/gzip" });
+    const { error } = await sb.storage.from(BUCKET).upload(path, await gzipFile(f), { upsert: true, contentType: "application/gzip" });
     if (error) throw new Error(`Upload of ${f.name} failed: ${error.message}`);
   }
   // Remove files from an older export.
@@ -162,7 +171,7 @@ export async function downloadMachineFiles(m: Machine): Promise<Machine> {
     setCloudState({ progress: `Downloading ${name}…` });
     const { data, error: err } = await sb.storage.from(BUCKET).download(exportPath(id, m.id, i, name));
     if (err || !data) throw new Error(`Couldn't download ${name}: ${err?.message ?? "no data"}`);
-    files.push({ name, text: await gunzipText(data) });
+    files.push(await gunzipFile(name, data));
   }
   setCloudState({ progress: undefined });
   const next: Machine = {

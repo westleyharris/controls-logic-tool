@@ -16,6 +16,7 @@ import type { Attachment } from "../lib/machines";
 import { addressVariants, searchPages } from "../lib/pdf";
 import { OutputTree } from "./OutputTree";
 import { Icon } from "./Icon";
+import { hmiLinksCached, hmiUsesFor } from "@core/logic/hmi";
 
 export function Inspector({
   index,
@@ -122,6 +123,19 @@ function RefPanel({
     return searchPages(attachments, terms, 8);
   }, [attachments, info]);
   const baseInfo = info.base !== info.key ? index.resolve(baseRef, selection.where) : null;
+  const onPanel = useMemo(() => (index.project.hmi?.length ? hmiUsesFor(hmiLinksCached(index), info.key) : []), [index, info]);
+  // The same button is often repeated on many screens: one line per button, with its screens.
+  const panelGroups = useMemo(() => {
+    const groups = new Map<string, { use: (typeof onPanel)[number]; screens: string[] }>();
+    for (const u of onPanel) {
+      const k = `${u.caption ?? u.type}|${u.access}|${u.address}`;
+      const g = groups.get(k);
+      if (g) {
+        if (!g.screens.includes(u.screen)) g.screens.push(u.screen);
+      } else groups.set(k, { use: u, screens: [u.screen] });
+    }
+    return [...groups.values()];
+  }, [onPanel]);
 
   const jump = (h: CrossReferenceHit) => {
     const sameAoi = h.kind === "aoi" && selection.where.kind === "aoi" && h.owner === selection.where.owner;
@@ -216,6 +230,34 @@ function RefPanel({
         )}
       </section>
 
+      {onPanel.length ? (
+        <section>
+          <h3 className="section-label">
+            On the panel <span className="count">{panelGroups.length}</span>
+          </h3>
+          <ul className="hits">
+            {panelGroups.slice(0, 12).map(({ use: u, screens }, i) => (
+              <li key={i}>
+                <button
+                  type="button"
+                  className="hit"
+                  onClick={() => onNavigate({ view: "hmi", screen: u.screen, object: u.object })}
+                  title={`${u.expr}\n${screens.join("\n")}`}
+                >
+                  <span className={`mn access-${u.access}`}>{u.access === "write" ? "SET" : u.access === "readwrite" ? "ENTRY" : u.access === "animation" ? "ANIM" : "SHOW"}</span>
+                  <span className="hit-loc">{u.caption ?? u.object}</span>
+                  <span className="hit-addr">
+                    {screens.length > 1 ? `${screens.length} screens, e.g. ${screens[0]}` : u.screen}
+                    {u.key && u.key !== info.key ? ` · ${u.address}` : ""}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          {panelGroups.length > 12 ? <p className="muted small">and {panelGroups.length - 12} more on the panel.</p> : null}
+        </section>
+      ) : null}
+
       {onDrawings.length ? (
         <section>
           <h3 className="section-label">
@@ -239,7 +281,12 @@ function RefPanel({
         <h3 className="section-label">
           Written by <span className="count">{writes.length}</span>
         </h3>
-        <HitList hits={writes} index={index} onJump={jump} empty="Nothing in the logic writes this." />
+        <HitList
+          hits={writes}
+          index={index}
+          onJump={jump}
+          empty={onPanel.some((u) => u.access === "write" || u.access === "readwrite") ? "Nothing in the logic writes this: the panel sets it (see above)." : "Nothing in the logic writes this."}
+        />
         <h3 className="section-label">
           Read by <span className="count">{reads.length}</span>
         </h3>

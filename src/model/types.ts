@@ -17,18 +17,23 @@ export type SourceFormat =
   | "l5x"
   | "slc"
   | "csv"
+  | "mer"
+  | "apa"
   | "unknown";
 
 /** A file handed to the importer (from drag-and-drop or the CLI). */
 export interface InputFile {
   name: string;
+  /** Text exports (everything except HMI files). Empty for binary files. */
   text: string;
+  /** Binary files (FactoryTalk View .MER / .APA). */
+  bytes?: Uint8Array;
 }
 
 export interface SourceFile {
   name: string;
   format: SourceFormat;
-  role: "logic" | "symbols" | "other";
+  role: "logic" | "symbols" | "hmi" | "other";
   size: number;
 }
 
@@ -232,6 +237,8 @@ export interface ProjectModel {
   dataFiles: DataFile[];
   forces: ForceEntry[];
   crossReference: CrossReferenceEntry[];
+  /** Operator panels (FactoryTalk View ME .MER / .APA) that belong to this machine. */
+  hmi?: HmiProject[];
   warnings: string[];
   stats: {
     programCount: number;
@@ -246,4 +253,114 @@ export interface ProjectModel {
     forceCount: number;
     xrefCount: number;
   };
+}
+
+/* ------------------------------ operator panels ------------------------------ */
+
+/** A PLC address on an HMI, e.g. `[PLC]N7:0/3` → { shortcut: "PLC", address: "N7:0/3" }. HMI tags have no shortcut. */
+export interface HmiAddress {
+  shortcut?: string;
+  address: string;
+}
+
+/** write: the panel sets it (button value). read: it's shown (indicator, display). animation: visibility / colour. */
+export type HmiAccess = "write" | "read" | "readwrite" | "animation";
+
+export interface HmiConnection {
+  /** Expression exactly as configured, e.g. `::[PLC]N22:1/4`. */
+  expr: string;
+  access: HmiAccess;
+  refs: HmiAddress[];
+}
+
+export type HmiObjectKind = "button" | "input" | "indicator" | "display" | "text" | "shape" | "group" | "alarm" | "other";
+
+/** One state of a button or indicator: caption and colours (#rrggbb). */
+export interface HmiState {
+  /** Tag value that selects this state (multistate indicators); index order otherwise. */
+  value?: number;
+  caption: string;
+  fill?: string;
+  /** Raised 3D border: base colour with its highlight and shadow. */
+  border?: string;
+  highlight?: string;
+  shadow?: string;
+}
+
+export interface HmiObject {
+  /** Object name in FactoryTalk View, e.g. MomentaryPushButton17. */
+  name: string;
+  /** Object type (the name without its number). */
+  type: string;
+  kind: HmiObjectKind;
+  /** left, top, right, bottom in screen pixels. */
+  rect?: [number, number, number, number];
+  /** Captions / state texts, in order. */
+  captions: string[];
+  connections: HmiConnection[];
+  /** Display a goto button opens. */
+  goto?: string;
+  /** Per-state captions and colours (buttons, indicators), in state order. */
+  states?: HmiState[];
+  /** Colours of single-look objects (panels, displays, shapes). */
+  fill?: string;
+  border?: string;
+  highlight?: string;
+  shadow?: string;
+  /** Text objects: colour, background and font. */
+  text?: { color?: string; back?: string; size?: number; bold?: boolean; font?: string };
+  /** Polygons and lines: corner points in screen pixels. */
+  points?: [number, number][];
+  closed?: boolean;
+  lineWidth?: number;
+  /** Image objects: key into HmiProject.images. */
+  image?: string;
+}
+
+export interface HmiScreen {
+  name: string;
+  width: number;
+  height: number;
+  /** Screen background (#rrggbb). */
+  background?: string;
+  objects: HmiObject[];
+}
+
+export interface HmiAlarmTrigger {
+  index: number;
+  label: string;
+  expr: string;
+  refs: HmiAddress[];
+}
+
+/** One alarm message: shown when the trigger tag equals `value`. */
+export interface HmiAlarmMessage {
+  value: number;
+  /** Trigger index (1-based); 0 = not attached to a trigger. */
+  trigger: number;
+  text: string;
+}
+
+export interface HmiShortcut {
+  name: string;
+  /** RSLinx Enterprise path, e.g. Ethernet.MyPLC */
+  device?: string;
+  /** IP address from the RSLinx topology, when present. */
+  address?: string;
+  deviceType?: string;
+}
+
+export interface HmiProject {
+  file: string;
+  format: "mer" | "apa";
+  application: string;
+  /** Display the panel opens on. */
+  startup?: string;
+  screens: HmiScreen[];
+  triggers: HmiAlarmTrigger[];
+  messages: HmiAlarmMessage[];
+  shortcuts: HmiShortcut[];
+  /** Pictures used on the screens: name → base64 data. */
+  images?: Record<string, { mime: string; data: string }>;
+  warnings: string[];
 }

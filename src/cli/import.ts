@@ -5,7 +5,7 @@
  */
 import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
-import { ACCEPTED_EXTENSIONS, importFiles } from "../importers/index.js";
+import { ACCEPTED_EXTENSIONS, importFiles, isHmiFile } from "../importers/index.js";
 import type { InputFile } from "../model/types.js";
 
 async function readInputs(path: string): Promise<InputFile[]> {
@@ -15,6 +15,10 @@ async function readInputs(path: string): Promise<InputFile[]> {
   for (const p of paths) {
     const lower = p.toLowerCase();
     if (!ACCEPTED_EXTENSIONS.some((ext) => lower.endsWith(ext))) continue;
+    if (isHmiFile(p)) {
+      files.push({ name: basename(p), text: "", bytes: new Uint8Array(await readFile(p)) });
+      continue;
+    }
     // Exports are Windows-1252 text; latin1 keeps every byte.
     files.push({ name: basename(p), text: await readFile(p, "latin1") });
   }
@@ -37,7 +41,17 @@ async function main() {
     await mkdir(dirname(resolve(out)), { recursive: true });
     await writeFile(resolve(out), JSON.stringify(project), "utf8");
   }
-  console.log(JSON.stringify({ name: project.name, platform: project.platform, ms, stats: project.stats, warnings: project.warnings }, null, 2));
+  const hmi = (project.hmi ?? []).map((h) => ({
+    file: h.file,
+    application: h.application,
+    screens: h.screens.length,
+    objects: h.screens.reduce((a, s) => a + s.objects.length, 0),
+    connections: h.screens.reduce((a, s) => a + s.objects.reduce((b, o) => b + o.connections.length, 0), 0),
+    triggers: h.triggers.map((t) => `${t.label}: ${t.expr}`),
+    messages: h.messages.length,
+    shortcuts: h.shortcuts,
+  }));
+  console.log(JSON.stringify({ name: project.name, platform: project.platform, ms, stats: project.stats, hmi, warnings: project.warnings }, null, 2));
 }
 
 main().catch((err: unknown) => {

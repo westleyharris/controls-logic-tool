@@ -89,7 +89,24 @@ There's no real OpenAI test yet, because that needs your key. The request and re
 - Start-up checklist and alarm handbook (printable).
 - Library-wide search, machine network map (messages / produced-consumed, unknown partners named from the message), spare parts and obsolescence report.
 
+## Phase 6: Operator panels ✅ done 2026-11-19
+
+- FactoryTalk View ME .MER and .APA read directly in the browser. Both are compound files of LZSS-packed chunks; the format was worked out from a real PanelView Plus application and checked against both files of it.
+- Screens are sketched from object positions and captions. Each object's PLC connections are typed as write, read, entry or animation, with goto targets and the startup display.
+- Alarm setup: trigger word plus numbered messages. The rung that MOVs each number into the trigger word was found in tests on PLC-5, SLC and Logix samples, using a synthetic trigger, because no real panel + PLC pair was available.
+- The PLC shortcut is resolved to its IP through the RSLinx Enterprise topology.
+- Panel-only machines are allowed (add the PLC export later). Panel and PLC files update independently.
+- Panel look (2026-11-20): colours, raised borders, polygon outlines (with each object's transform), pictures and text fonts are read from the file, and indicators show the state their saved value selects.
+- Known gaps:
+  - Button and indicator text colours are picked for contrast. Their field in the file isn't pinned down yet: a photo of a real screen would settle it.
+  - Animations (visibility, colour) aren't applied, and PanelView bitmap fonts are drawn as Arial.
+  - Bit-type alarm triggers are treated like value triggers.
+  - HMI tags (not direct references) are listed by name only.
+  - Only one application per format has been seen (FactoryTalk View ME 5.x/6.x era).
+
 ## Next
+
+- Panels: link the PLC shortcut's IP to library machines on the network map; read HMI tag databases; draw images.
 
 - RSLogix 500 description CSV for SLC exports (waiting on a sample export).
 - Check the L5X importer against a real export.

@@ -1,15 +1,17 @@
-import { finalizeProject } from "../model/factory.js";
+import { emptyProject, finalizeProject } from "../model/factory.js";
 import type { InputFile, ProjectModel, SourceFile, SourceFormat } from "../model/types.js";
 import { buildCrossReference } from "../xref/build.js";
 import { parseL5kText } from "./l5k.js";
 import { parseL5xText } from "./l5x.js";
 import { parsePc5Text } from "./pc5.js";
 import { parseSy6Text } from "./sy6.js";
+import { parseFactoryTalkMe } from "./hmi/me.js";
 
 export { parsePc5Text } from "./pc5.js";
 export { parseL5kText } from "./l5k.js";
 export { parseL5xText } from "./l5x.js";
 export { parseSy6Text } from "./sy6.js";
+export { parseFactoryTalkMe } from "./hmi/me.js";
 
 const EXT_FORMAT: Record<string, SourceFormat> = {
   pc5: "pc5",
@@ -19,6 +21,8 @@ const EXT_FORMAT: Record<string, SourceFormat> = {
   l5x: "l5x",
   slc: "slc",
   csv: "csv",
+  mer: "mer",
+  apa: "apa",
 };
 
 export function formatOf(name: string): SourceFormat {
@@ -27,7 +31,13 @@ export function formatOf(name: string): SourceFormat {
 }
 
 /** File extensions the drop zone accepts. */
-export const ACCEPTED_EXTENSIONS = [".pc5", ".sy6", ".sy5", ".l5k", ".l5x", ".slc", ".csv"];
+export const ACCEPTED_EXTENSIONS = [".pc5", ".sy6", ".sy5", ".l5k", ".l5x", ".slc", ".csv", ".mer", ".apa"];
+
+/** FactoryTalk View ME runtime (.MER) and project archive (.APA) files. */
+export function isHmiFile(name: string): boolean {
+  const f = formatOf(name);
+  return f === "mer" || f === "apa";
+}
 
 export class ImportError extends Error {}
 
@@ -41,7 +51,7 @@ export function importFiles(files: InputFile[]): ProjectModel {
     name: f.name,
     format: formatOf(f.name),
     role: "other",
-    size: f.text.length,
+    size: f.bytes?.length ?? f.text.length,
   }));
   const markRole = (name: string, role: SourceFile["role"]) => {
     const s = sources.find((x) => x.name === name);
@@ -80,14 +90,51 @@ export function importFiles(files: InputFile[]): ProjectModel {
     project.warnings.push(
       "The .SLC export doesn't include address descriptions (RSLogix 500 keeps them in its documentation database), so addresses show without descriptions.",
     );
+  } else if (files.some((f) => isHmiFile(f.name))) {
+    // Panel files only: an HMI-only machine (add the PLC export later).
+    const first = files.find((f) => isHmiFile(f.name))!;
+    project = emptyProject(first.name.replace(/\.[^.]+$/, ""), "unknown");
   } else {
     const names = files.map((f) => f.name).join(", ") || "(none)";
     throw new ImportError(
-      `No PLC export found. Pick a .PC5 (with its .SY6), a .SLC, a .L5K or a .L5X file. Received: ${names}`,
+      `No PLC export found. Pick a .PC5 (with its .SY6), a .SLC, a .L5K or a .L5X file (and the panel's .MER or .APA if you have it). Received: ${names}`,
     );
   }
+
+  const hmi = readHmiFiles(files, (name) => markRole(name, "hmi"));
+  if (hmi.projects.length) {
+    project.hmi = hmi.projects;
+    if (!project.programs.length) project.name = hmi.projects[0]!.application;
+  }
+  project.warnings.push(...hmi.warnings);
 
   project.sources = sources;
   project.crossReference = buildCrossReference(project);
   return finalizeProject(project);
+}
+
+function readHmiFiles(files: InputFile[], mark: (name: string) => void) {
+  const projects: NonNullable<ProjectModel["hmi"]> = [];
+  const warnings: string[] = [];
+  // The same application as both .MER and .APA: keep one (the .MER is what runs on the panel).
+  const seen = new Set<string>();
+  const hmiFiles = files.filter((f) => isHmiFile(f.name)).sort((a, b) => Number(formatOf(b.name) === "mer") - Number(formatOf(a.name) === "mer"));
+  for (const f of hmiFiles) {
+    if (!f.bytes?.length) {
+      warnings.push(`${f.name} was read as text, not as a FactoryTalk View file — add it again.`);
+      continue;
+    }
+    try {
+      const hmi = parseFactoryTalkMe(f.bytes, f.name);
+      mark(f.name);
+      const key = hmi.application.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      projects.push(hmi);
+      for (const w of hmi.warnings) warnings.push(`${f.name}: ${w}`);
+    } catch (err) {
+      warnings.push(`${f.name} couldn't be read as a FactoryTalk View ME file (${err instanceof Error ? err.message : String(err)}).`);
+    }
+  }
+  return { projects, warnings };
 }

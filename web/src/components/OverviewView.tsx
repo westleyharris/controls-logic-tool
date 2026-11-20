@@ -58,7 +58,7 @@ export function OverviewView({
   const firstProgram = firstTask ? project.programs.find((p) => p.name === firstTask.programs[0]) : project.programs[0];
   const startRoutine = firstProgram?.mainRoutine ?? firstProgram?.routines[0]?.name;
 
-  const tiles: [string, number | string, Location | undefined][] = logix
+  const baseTiles: [string, number | string, Location | undefined][] = logix
     ? [
         ["Programs", s.programCount, { view: "structure" }],
         ["Routines", s.routineCount, { view: "structure" }],
@@ -75,6 +75,10 @@ export function OverviewView({
         ["Documented addresses", s.symbolCount, undefined],
         ["Forces", s.forceCount, s.forceCount ? { view: "health" } : undefined],
       ];
+  const panelScreens = (project.hmi ?? []).reduce((a, h) => a + h.screens.length, 0);
+  const tiles: [string, number | string, Location | undefined][] = panelScreens
+    ? [...baseTiles, ["Panel screens", panelScreens, { view: "hmi" }]]
+    : baseTiles;
 
   return (
     <div className="view">

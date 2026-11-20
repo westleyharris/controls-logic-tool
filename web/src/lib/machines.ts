@@ -373,5 +373,5 @@ export async function renameLine(company: string, from: string, to: string): Pro
 }
 
 export function platformLabel(p: string): string {
-  return p === "logix" ? "Logix" : p === "plc5" ? "PLC-5" : p === "slc" ? "SLC 500" : p;
+  return p === "logix" ? "Logix" : p === "plc5" ? "PLC-5" : p === "slc" ? "SLC 500" : p === "unknown" ? "Panel only" : p;
 }

@@ -2,7 +2,7 @@ import type { ProjectModel } from "@core/model/types";
 import { parseClassicAddress } from "@core/logic/refs";
 import type { Location, Selection } from "./nav";
 
-export type SearchKind = "routine" | "aoi" | "datatype" | "datafile" | "tag" | "comment" | "module" | "alarm";
+export type SearchKind = "routine" | "aoi" | "datatype" | "datafile" | "tag" | "comment" | "module" | "alarm" | "screen" | "panel" | "message";
 
 export interface SearchItem {
   kind: SearchKind;
@@ -22,6 +22,9 @@ const KIND_ORDER: Record<SearchKind, number> = {
   datatype: 4,
   module: 5,
   comment: 6,
+  screen: 1,
+  message: 2,
+  panel: 3,
 };
 
 function oneLine(s: string | undefined, max = 110): string | undefined {
@@ -142,6 +145,52 @@ export function buildSearchIndex(project: ProjectModel): SearchItem[] {
     }
   };
   walk(project.modules);
+
+  // Operator panel: screens, buttons / indicators by caption, alarm messages.
+  for (const hmi of project.hmi ?? []) {
+    // The same button repeated on many screens → one result.
+    const seenObjects = new Map<string, { item: SearchItem; screens: string[] }>();
+    for (const screen of hmi.screens) {
+      items.push({
+        kind: "screen",
+        label: screen.name,
+        detail: `Panel screen · ${screen.objects.filter((o) => o.kind === "button" || o.kind === "input").length} buttons`,
+        haystack: `${screen.name} screen panel hmi`.toLowerCase(),
+        go: { view: "hmi", screen: screen.name },
+      });
+      for (const o of screen.objects) {
+        if (o.kind === "shape" || o.kind === "group" || !o.captions.length) continue;
+        const caption = o.captions.map((c) => c.replace(/\s+/g, " ")).join(" / ");
+        const addresses = [...new Set(o.connections.flatMap((c) => c.refs.map((r) => r.address)))];
+        const key = `${caption}|${o.type}|${addresses.join(",")}`;
+        const seen = seenObjects.get(key);
+        if (seen) {
+          seen.screens.push(screen.name);
+          seen.item.detail = oneLine(`${seen.screens.length} screens · ${o.type}${addresses.length ? ` · ${addresses.join(", ")}` : ""}`);
+          seen.item.haystack += ` ${screen.name.toLowerCase()}`;
+          continue;
+        }
+        const item: SearchItem = {
+          kind: "panel",
+          label: oneLine(caption, 70) ?? o.name,
+          detail: oneLine(`${screen.name} · ${o.type}${addresses.length ? ` · ${addresses.join(", ")}` : ""}`),
+          haystack: `${caption} ${o.name} ${screen.name} ${addresses.join(" ")}`.toLowerCase(),
+          go: { view: "hmi", screen: screen.name, object: o.name },
+        };
+        seenObjects.set(key, { item, screens: [screen.name] });
+        items.push(item);
+      }
+    }
+    for (const m of hmi.messages) {
+      items.push({
+        kind: "message",
+        label: oneLine(m.text, 90) ?? m.text,
+        detail: `Panel alarm message ${m.value}`,
+        haystack: `${m.text} alarm message ${m.value}`.toLowerCase(),
+        go: { view: "hmi", tab: "alarms" },
+      });
+    }
+  }
 
   return items;
 }

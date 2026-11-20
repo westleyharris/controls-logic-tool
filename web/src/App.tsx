@@ -31,6 +31,7 @@ import { startAuth, useCloud } from "./lib/cloud";
 import { ensureMachineFiles, onDrawingsChange, onSyncChange, requestSync, syncAttachments, syncNow } from "./lib/sync";
 import { extractPdfText } from "./lib/pdf";
 import { importInWorker, readExportFile } from "./lib/importer";
+import { HmiView } from "./components/HmiView";
 import {
   deleteMachine,
   deleteAttachment,
@@ -84,8 +85,21 @@ function summarize(files: InputFile[], model: ProjectModel) {
     platform: model.platform,
     processor: model.controller.processorType,
     fileNames: files.map((f) => f.name),
-    size: files.reduce((a, f) => a + f.text.length, 0),
+    size: files.reduce((a, f) => a + (f.bytes?.length ?? f.text.length), 0),
   };
+}
+
+const isPanelFile = (name: string) => /\.(mer|apa)$/i.test(name);
+
+/**
+ * New files for a machine: PLC exports replace the PLC export, panel files
+ * replace the panel files, and whatever wasn't picked is kept.
+ */
+function mergeExportFiles(old: InputFile[], picked: InputFile[]): InputFile[] {
+  const pickedPanel = picked.some((f) => isPanelFile(f.name));
+  const pickedPlc = picked.some((f) => !isPanelFile(f.name));
+  const keep = old.filter((f) => (isPanelFile(f.name) ? !pickedPanel : !pickedPlc));
+  return [...keep, ...picked];
 }
 
 export default function App() {
@@ -219,7 +233,8 @@ export default function App() {
       const wide = window.innerWidth > 760;
       setOrganizerOpen(wide);
       setInspectorOpen(wide);
-      const target = loc ?? { view: "overview" as const };
+      // A panel-only machine (no PLC program yet) opens on its screens.
+      const target: Location = loc ?? (model.programs.length === 0 && model.hmi?.length ? { view: "hmi" } : { view: "overview" });
       setLocation(target);
       window.history.pushState(null, "", toHash(target));
       rememberLastMachine(machine.id);
@@ -306,11 +321,16 @@ export default function App() {
   const updateExport = async (id: string, files: File[]) => {
     setError(null);
     try {
-      const { inputs, model } = await parseFiles(files);
+      let existing = await getMachine(id);
+      if (existing && (existing.remote || !existing.files.length)) existing = await ensureMachineFiles(existing);
+      setBusy(`Reading ${files.map((f) => f.name).join(", ")}…`);
+      const picked = await Promise.all(files.map(readExportFile));
+      const inputs = mergeExportFiles(existing?.files ?? [], picked);
+      const model = await importInWorker(inputs);
       await updateMachine(id, { ...summarize(inputs, model), files: inputs, updatedAt: Date.now(), filesDirty: true, remote: false });
       requestSync();
       await refreshMachines();
-      if (current?.id === id) await openMachine(id);
+      if (current?.id === id) await openMachine(id, location);
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -657,6 +677,16 @@ export default function App() {
                 structure={structure}
                 io={io}
                 alarms={alarms}
+                onNavigate={navigate}
+                onSelect={select}
+              />
+            ) : null}
+            {location.view === "hmi" ? (
+              <HmiView
+                index={index}
+                location={location}
+                machineName={current.name}
+                onAddFiles={(f) => void updateExport(current.id, f)}
                 onNavigate={navigate}
                 onSelect={select}
               />

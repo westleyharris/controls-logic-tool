@@ -112,6 +112,12 @@ const PATHS = {
   refresh: <path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" />,
   "log-out": <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />,
   download: <path d="M12 3v12M6.5 10.5 12 16l5.5-5.5M4 20h16" />,
+  panel: (
+    <>
+      <rect x="3" y="4" width="18" height="13" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+    </>
+  ),
 } as const;
 
 export type IconName = keyof typeof PATHS;

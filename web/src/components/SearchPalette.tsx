@@ -10,6 +10,9 @@ export const KIND_LABEL: Record<SearchKind, string> = {
   datatype: "Type",
   module: "Module",
   comment: "Comment",
+  screen: "Screen",
+  panel: "Panel",
+  message: "Message",
 };
 
 export function SearchPalette({
